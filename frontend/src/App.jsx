@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, Moon, Search, SlidersHorizontal, Sun, Tag, X } from 'lucide-react'
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, Moon, Play, RefreshCw, Search, SlidersHorizontal, Sun, Tag, WandSparkles, X } from 'lucide-react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import briefaLogo from '../../BRIEF Logo.png'
+import { livePlatformLinks, sourceGroups, sourcesForCategory, trendingVideoPlatforms } from './data/sources.js'
 import './App.css'
 
 const categories = ['News', 'Jobs', 'Scholarships', 'Opportunities', 'Events']
@@ -20,29 +21,14 @@ const categoryTopics = {
   Opportunities: ['Business & Investment', 'Startup Funding & Grants', 'Accelerators & Incubators', 'Competitions & Awards', 'Hackathons', 'Tenders & Calls for Proposals', 'Training Courses & Certifications'],
   Events: ['Upcoming Events', 'Local Announcements', 'International Announcements', 'Government & Institutional Notices', 'Emergency & Public Safety Alerts', 'Public Holidays & Important Dates', 'Elections', 'Exam Results & School Calendars', 'Conferences & Summits', 'Tech Events', 'Sports Events', 'Concerts & Entertainment', 'Commemorations & Anniversaries'],
 }
-const sourceGroups = [
-  { name: 'News & current affairs', sources: [
-    { name: 'BBC News', description: 'Breaking news, video and the latest top stories from the U.S. and around the world.', url: 'https://www.bbc.com/news' },
-    { name: 'Reuters', description: 'Independent global reporting, business news and world coverage.', url: 'https://www.reuters.com/world/africa/' },
-    { name: 'Al Jazeera', description: 'News and analysis from Africa and across the world.', url: 'https://www.aljazeera.com/where/africa/' },
-    { name: 'The Guardian', description: 'International reporting, including news from Africa.', url: 'https://www.theguardian.com/world/africa' },
-    { name: 'Associated Press', description: 'Independent journalism and reporting from across the globe.', url: 'https://apnews.com/hub/africa' },
-  ] },
-  { name: 'Jobs & opportunities', sources: [
-    { name: 'UN Careers', description: 'Career opportunities across the United Nations system.', url: 'https://careers.un.org/' },
-    { name: 'UNDP Careers', description: 'Roles and consultancies supporting development around the world.', url: 'https://www.undp.org/careers' },
-    { name: 'ReliefWeb', description: 'Humanitarian jobs, training, reports and opportunities.', url: 'https://reliefweb.int/jobs' },
-    { name: 'Opportunities for Africans', description: 'Scholarships, fellowships and opportunities for African students and professionals.', url: 'https://www.opportunitiesforafricans.com/' },
-  ] },
-  { name: 'Research & trends', sources: [
-    { name: 'Google News', description: 'A broad view of current coverage from publishers around the world.', url: 'https://news.google.com/' },
-    { name: 'World Health Organization', description: 'Public health guidance, alerts and global health updates.', url: 'https://www.who.int/news' },
-    { name: 'UN News', description: 'Reporting and updates from United Nations agencies and programmes.', url: 'https://news.un.org/' },
-  ] },
-]
 const SavedContext = createContext({ saved: [], toggleSaved: () => {} })
+const StoriesContext = createContext({ stories: [], sources: [], refreshedAt: null, aiStatus: 'not_configured', imageGenerationAvailable: false, trendingVideos: [], loading: true, error: '', refreshing: false, refresh: () => {}, generateStoryImage: async () => {} })
 
-const stories = [
+function useStories() {
+  return useContext(StoriesContext)
+}
+
+const seedStories = [
   {
     id: 'africa-climate', category: 'News', tag: 'CLIMATE & ENERGY', topics: ['Breaking', 'Trending Now', 'Africa', 'Energy', 'Environment & Climate'],
     title: 'Africa’s next energy chapter is being written in its cities',
@@ -193,17 +179,6 @@ const stories = [
   },
 ]
 
-const categoryShowcasePhotoIds = {
-  Jobs: ['un-programme', 'women-founders', 'rwanda-innovation'],
-  Scholarships: ['climate-fellowship', 'health-data', 'africa-climate'],
-  Opportunities: ['ocean-grant', 'climate-fellowship', 'women-founders'],
-}
-const demoVideoClips = [
-  { id: 'climate-field', story: stories[0], src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', credit: 'MDN · CC0 sample' },
-  { id: 'city-innovation', story: stories[1], src: 'https://media.w3.org/2010/05/bunny/trailer.mp4', credit: 'W3C · demo footage' },
-  { id: 'small-business', story: stories[7], src: 'https://media.w3.org/2010/05/sintel/trailer.mp4', credit: 'W3C · demo footage' },
-]
-
 function readSaved() {
   try { return JSON.parse(localStorage.getItem('briefa-saved') || '[]') } catch { return [] }
 }
@@ -273,8 +248,22 @@ function SaveButton({ story }) {
 }
 
 function StoryCard({ story, variant = 'standard' }) {
+  const { imageGenerationAvailable, generateStoryImage } = useStories()
+  const [generatingImage, setGeneratingImage] = useState(false)
+  const [imageError, setImageError] = useState('')
+  const createImage = async () => {
+    setGeneratingImage(true)
+    setImageError('')
+    try {
+      await generateStoryImage(story.id)
+    } catch (error) {
+      setImageError(error.message)
+    } finally {
+      setGeneratingImage(false)
+    }
+  }
   return <article className={`story-card story-${variant}`}>
-    <Link to={`/story/${story.id}`} className="story-image-link"><img src={story.image} alt="" loading="lazy" /><span className="image-arrow"><ArrowUpRight size={16} /></span></Link>
+    <div className="story-visual"><Link to={`/story/${story.id}`} className="story-image-link"><img src={story.image} alt="" loading="lazy" /><span className="image-arrow"><ArrowUpRight size={16} /></span></Link>{imageGenerationAvailable && story.sourceUrl && <button className="story-image-ai" type="button" onClick={createImage} disabled={generatingImage} title={imageError || 'Create an AI cover based on this story'}><WandSparkles size={13} />{generatingImage ? 'Creating' : 'AI cover'}</button>}</div>
     <div className="story-card-copy"><div className="story-card-meta"><Link to={`/category/${story.category.toLowerCase()}`} className="eyebrow">{story.category}</Link><span>{story.read}</span></div><h3><Link to={`/story/${story.id}`}>{story.title}</Link></h3><p>{story.summary}</p><div className="story-byline"><span>{story.author}</span><span className="byline-dot">·</span><span>{story.date}</span><SaveButton story={story} /></div></div>
   </article>
 }
@@ -291,10 +280,16 @@ function Newsletter() {
 }
 
 function FeaturedStory() {
-  const featured = [stories[0], stories[4], stories[3]]
+  const { stories } = useStories()
+  const featured = stories.filter((story) => story.category === 'News').slice(0, 3)
   const [active, setActive] = useState(0)
-  useEffect(() => { const timer = window.setInterval(() => setActive((current) => (current + 1) % featured.length), 7000); return () => window.clearInterval(timer) }, [featured.length])
-  const story = featured[active]
+  useEffect(() => {
+    if (featured.length < 2) return undefined
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % featured.length), 7000)
+    return () => window.clearInterval(timer)
+  }, [featured.length])
+  if (!featured.length) return <section className="feature-section breaking-feature"><div className="feature-copy"><span className="eyebrow">LIVE NEWS</span><h1>Connecting to trusted sources.</h1><p className="feature-summary">The latest reporting will appear here as soon as the feed is ready.</p></div></section>
+  const story = featured[active % featured.length]
   const changeSlide = (step) => setActive((current) => (current + step + featured.length) % featured.length)
 
   return <section className="feature-section breaking-feature" aria-label="Breaking story">
@@ -309,7 +304,8 @@ function FeaturedStory() {
 }
 
 function DailyBriefRail() {
-  const briefStories = [stories[1], stories[2], stories[5], stories[6], stories[7]]
+  const { stories } = useStories()
+  const briefStories = stories.slice(1, 6)
   return <aside className="daily-brief-rail" aria-label="The Daily Brief">
     <div className="daily-brief-heading"><span className="eyebrow">THE DAILY BRIEF</span><span className="live-dot" /></div>
     <div className="daily-brief-window"><div className="daily-brief-track">
@@ -322,19 +318,20 @@ function DailyBriefRail() {
 }
 
 function CategoryShowcase({ category, title, description, count }) {
+  const { stories, loading } = useStories()
   const categoryStories = stories.filter((story) => story.category === category)
-  const slides = categoryStories.length > 1
-    ? categoryStories
-    : (categoryShowcasePhotoIds[category] || []).map((id) => stories.find((story) => story.id === id)).filter(Boolean)
+  const slides = categoryStories
   const [active, setActive] = useState(0)
-  const story = slides[active % slides.length]
-  const isCategoryStory = story.category === category
+  const story = slides.length ? slides[active % slides.length] : null
   const titleLabel = title === 'Events' ? 'Events & Announcements' : title
   useEffect(() => {
     if (slides.length < 2) return undefined
     const timer = window.setInterval(() => setActive((current) => (current + 1) % slides.length), 7000)
     return () => window.clearInterval(timer)
   }, [slides.length])
+
+  if (!story) return <section className={`category-intro category-showcase category-showcase--${category.toLowerCase()}`}><div className="showcase-copy"><span className="showcase-badge">{titleLabel.toUpperCase()}</span><p>{loading ? 'Connecting to live sources...' : 'No live items are available in this category yet.'}</p></div></section>
+  const isCategoryStory = story.category === category
 
   if (category === 'News') {
     const featureStory = categoryStories[0] || story
@@ -459,11 +456,13 @@ function CategoryShowcase({ category, title, description, count }) {
 }
 
 function TrendingStories() {
-  return <section className="trending-section"><SectionHeading eyebrow="THE STORIES GAINING MOMENTUM" title="Top trending" to="/category/news?topic=Trending%20Now" /><div className="trending-list">{stories.filter((story) => story.topics?.includes('Trending Now')).slice(0, 3).map((story, index) => <Link to={`/story/${story.id}`} className="trending-item" key={story.id}><span className="trending-number">0{index + 1}</span><span><span className="eyebrow">{story.category} · {story.tag}</span><strong>{story.title}</strong></span><ArrowUpRight size={17} /></Link>)}</div></section>
+  const { stories } = useStories()
+  return <section className="trending-section"><SectionHeading eyebrow="THE LATEST FROM OUR SOURCES" title="In focus" to="/category/news" /><div className="trending-list">{stories.slice(0, 3).map((story, index) => <Link to={`/story/${story.id}`} className="trending-item" key={story.id}><span className="trending-number">0{index + 1}</span><span><span className="eyebrow">{story.category} · {story.tag}</span><strong>{story.title}</strong></span><ArrowUpRight size={17} /></Link>)}</div></section>
 }
 
 function TrendingPhotoRail() {
-  const photoStories = stories.filter((story) => story.topics?.includes('Trending Now')).slice(0, 3)
+  const { stories } = useStories()
+  const photoStories = stories.slice(0, 3)
   return <aside className="daily-brief-rail trending-photo-rail" aria-label="Trending photos">
     <div className="daily-brief-heading"><span className="eyebrow">TRENDING PHOTOS</span><span className="live-dot" /></div>
     <div className="daily-brief-window"><div className="daily-brief-track">
@@ -476,37 +475,36 @@ function TrendingPhotoRail() {
 }
 
 function TrendingVideoSection() {
-  const videoRail = useRef(null)
+  const { trendingVideos } = useStories()
+  const [active, setActive] = useState(0)
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      const rail = videoRail.current
-      if (!rail || window.matchMedia('(prefers-reduced-motion: reduce)').matches || rail.matches(':hover') || rail.contains(document.activeElement)) return
-      const loopPoint = rail.children[demoVideoClips.length]?.offsetLeft || 0
-      if (loopPoint > 0) rail.scrollLeft = rail.scrollLeft >= loopPoint - 1 ? 0 : Math.min(rail.scrollLeft + 1, loopPoint)
-    }, 50)
+    if (trendingVideos.length < 2) return undefined
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % trendingVideos.length), 10000)
     return () => window.clearInterval(timer)
-  }, [])
-  return <section className="video-highlights">
-    <div className="video-main"><div className="video-heading"><h2>TRENDING SHORT VIDEOS</h2><span className="video-demo-note">SAMPLE CLIPS</span></div>
-      <div className="video-rail"><div className="video-grid" ref={videoRail}>{[...demoVideoClips, ...demoVideoClips, ...demoVideoClips].map((clip, index) => <article className="video-card" key={`${clip.id}-${index}`} aria-hidden={index >= demoVideoClips.length}>
-        <div className="video-frame"><video controls playsInline preload="none" poster={clip.story.image} aria-label={`Demo video for ${clip.story.title}`} tabIndex={index >= demoVideoClips.length ? -1 : undefined}><source src={clip.src} type="video/mp4" /></video><span className="video-demo-badge">DEMO</span></div>
-        <div className="video-card-copy"><h3><Link to={`/story/${clip.story.id}`} tabIndex={index >= demoVideoClips.length ? -1 : undefined}>{clip.story.title}</Link></h3></div>
-      </article>)}</div><button className="video-next" onClick={() => { if (videoRail.current) { const loopPoint = videoRail.current.children[demoVideoClips.length]?.offsetLeft || 0; videoRail.current.scrollLeft = loopPoint > 0 && videoRail.current.scrollLeft >= loopPoint - 190 ? 0 : videoRail.current.scrollLeft + 190 } }} aria-label="Show more videos"><ChevronRight size={21} /></button></div>
-    </div>
-    <TrendingPhotoRail />
-  </section>
+  }, [trendingVideos.length])
+  const video = trendingVideos.length ? trendingVideos[active % trendingVideos.length] : null
+  return <section className="video-highlights"><div className="video-main"><div className="video-heading"><div><span className="eyebrow">FROM THE PLATFORMS YOU NAMED</span><h2>{video ? 'TRENDING SHORTS' : 'VIDEO DISCOVERY'}</h2></div><span className="video-demo-note">{video ? `${String(active + 1).padStart(2, '0')} / ${String(trendingVideos.length).padStart(2, '0')}` : 'LIVE PLATFORM REEL'}</span></div>{video ? <div className="video-feature"><iframe src={video.embedUrl} title={video.title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen loading="lazy" /><div className="video-feature-copy"><span>{video.channelTitle} · {Number(video.viewCount).toLocaleString()} views</span><strong>{video.title}</strong><a href={video.url} target="_blank" rel="noreferrer">Watch on YouTube <ArrowUpRight size={14} /></a></div><div className="video-feature-controls"><button type="button" aria-label="Previous video" onClick={() => setActive((current) => (current - 1 + trendingVideos.length) % trendingVideos.length)}><ArrowLeft size={16} /></button><button type="button" aria-label="Next video" onClick={() => setActive((current) => (current + 1) % trendingVideos.length)}><ArrowRight size={16} /></button></div></div> : <div className="video-platform-viewport"><div className="video-platform-track">{[...trendingVideoPlatforms, ...trendingVideoPlatforms].map((platform, index) => <a className="video-platform-card" href={platform.url} key={`${platform.name}-${index}`} target="_blank" rel="noreferrer" aria-hidden={index >= trendingVideoPlatforms.length}><span>{platform.name}</span><strong>{platform.label}</strong><Play size={18} /></a>)}</div></div>}<p className="video-access-note">{video ? 'Live YouTube Shorts · rotating automatically' : 'Platform reel · connect a YouTube API key to play live Shorts here'}</p></div><TrendingPhotoRail /></section>
+}
+
+function CategorySources({ category }) {
+  const sources = sourcesForCategory(category)
+  return <nav className="category-source-list" aria-label={`${category} source platforms`}><span>OFFICIAL SOURCES</span>{sources.map((source) => <a href={source.url} key={source.name} target="_blank" rel="noreferrer" title={source.description}>{source.name}<ArrowUpRight size={12} /></a>)}</nav>
 }
 
 function CategoryPreview({ category }) {
+  const { stories } = useStories()
   const sectionName = category === 'Events' ? 'Events & Announcements' : category
   const sectionStories = stories.filter((story) => story.category === category).slice(0, 3)
   const topics = categoryTopics[category].slice(0, 5)
-  return <section className={`category-preview preview-${category.toLowerCase()}`}><SectionHeading eyebrow={`THE LATEST IN ${sectionName.toUpperCase()}`} title={sectionName} to={`/category/${category.toLowerCase()}`} linkLabel={`All ${sectionName}`} /><nav className="preview-topics" aria-label={`${sectionName} topics`}><span>EXPLORE</span>{topics.map((topic) => <Link key={topic} to={`/category/${category.toLowerCase()}?topic=${encodeURIComponent(topic)}`}>{topic}</Link>)}</nav><div className="story-grid preview-story-grid">{sectionStories.map((story) => <StoryCard key={story.id} story={story} />)}</div></section>
+  return <section className={`category-preview preview-${category.toLowerCase()}`}><SectionHeading eyebrow={`THE LATEST IN ${sectionName.toUpperCase()}`} title={sectionName} to={`/category/${category.toLowerCase()}`} linkLabel={`All ${sectionName}`} /><nav className="preview-topics" aria-label={`${sectionName} topics`}><span>EXPLORE</span>{topics.map((topic) => <Link key={topic} to={`/category/${category.toLowerCase()}?topic=${encodeURIComponent(topic)}`}>{topic}</Link>)}</nav><div className="story-grid preview-story-grid">{sectionStories.map((story) => <StoryCard key={story.id} story={story} />)}</div><CategorySources category={category} /></section>
 }
 
 function HomePage() {
+  const { refreshedAt } = useStories()
+  const edition = refreshedAt ? new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(refreshedAt)) : 'Waiting for live sources'
   return <main className="page-shell home-page">
-    <div className="edition-line"><span>YOUR WINDOW TO WHAT MATTERS</span><span className="edition-rule" /><span>SAMPLE EDITION &nbsp;·&nbsp; OCTOBER 2026</span></div>
+    <FeedStatus />
+    <div className="edition-line"><span>YOUR WINDOW TO WHAT MATTERS</span><span className="edition-rule" /><span>LIVE EDITION &nbsp;·&nbsp; {edition.toUpperCase()}</span></div>
     <div className="home-lead-grid"><FeaturedStory /><DailyBriefRail /></div>
     <TrendingStories />
     <CategoryPreview category="News" />
@@ -519,14 +517,19 @@ function HomePage() {
 
 function CategoryPage() {
   const { category } = useParams()
+  const { stories } = useStories()
   const title = categories.find((item) => item.toLowerCase() === category?.toLowerCase()) || 'News'
   const [searchParams, setSearchParams] = useSearchParams()
   const [openFilter, setOpenFilter] = useState('')
   const selectedTopic = searchParams.get('topic') || 'All'
   const selectedRegion = searchParams.get('region') || 'All'
   const selectedStatus = searchParams.get('status') || 'All'
+  const selectedCountry = searchParams.get('country') || 'All'
+  const selectedDate = searchParams.get('date') || 'All'
+  const dateWindows = { '24h': 24 * 60 * 60 * 1000, '7d': 7 * 24 * 60 * 60 * 1000, '30d': 30 * 24 * 60 * 60 * 1000 }
+  const [now] = useState(() => Date.now())
   const titleLabel = title === 'Events' ? 'Events & Announcements' : title
-  const filtered = stories.filter((story) => story.category === title && (selectedTopic === 'All' || story.topics?.includes(selectedTopic)) && (title !== 'Events' || selectedRegion === 'All' || story.region === selectedRegion) && (title !== 'Events' || selectedStatus === 'All' || story.eventStatus === selectedStatus))
+  const filtered = stories.filter((story) => story.category === title && (selectedTopic === 'All' || story.topics?.includes(selectedTopic)) && (selectedCountry === 'All' || story.country === selectedCountry) && (!dateWindows[selectedDate] || now - Date.parse(story.publishedAt) <= dateWindows[selectedDate]) && (title !== 'Events' || selectedRegion === 'All' || story.region === selectedRegion) && (title !== 'Events' || selectedStatus === 'All' || story.eventStatus === selectedStatus))
   const updateFilter = (key, value) => {
     const nextParams = new URLSearchParams(searchParams)
     if (value === 'All') nextParams.delete(key)
@@ -534,7 +537,7 @@ function CategoryPage() {
     setSearchParams(nextParams)
   }
   const selectClass = (key, value) => (searchParams.get(key) || 'All') === value ? 'is-active' : ''
-  return <main className="page-shell category-page"><CategoryShowcase category={title} title={titleLabel} description={categoryDescriptions[title]} count={filtered.length} />
+  return <main className="page-shell category-page"><FeedStatus /><CategoryShowcase category={title} title={titleLabel} description={categoryDescriptions[title]} count={filtered.length} /><FeedFilters country={selectedCountry} date={selectedDate} onChange={updateFilter} />
     {title === 'Events' ? <div className="event-filters" aria-label="Filter events">
       <span className="event-filter-caption"><SlidersHorizontal size={14} /> FILTER</span>
       {[{ id: 'status', label: 'When', icon: CalendarDays, options: ['All', 'Upcoming', 'Recent'] }, { id: 'region', label: 'Location', icon: MapPin, options: ['All', 'Local', 'International'] }, { id: 'topic', label: 'Topic', icon: Tag, options: ['All', ...categoryTopics.Events] }].map((filter) => {
@@ -550,8 +553,19 @@ function CategoryPage() {
       })}
     </div> : <nav className="topic-filter" aria-label={`${titleLabel} subcategories`}><span className="topic-filter-label">BROWSE BY TOPIC</span><button className={selectClass('topic', 'All')} onClick={() => updateFilter('topic', 'All')}>All</button>{categoryTopics[title].map((topic) => <button key={topic} className={selectClass('topic', topic)} onClick={() => updateFilter('topic', topic)}>{topic}</button>)}</nav>}
     {title === 'News' && <TrendingVideoSection />}
-    {filtered.length ? title === 'Events' ? ['Upcoming', 'Recent'].map((status) => { const eventStories = filtered.filter((story) => story.eventStatus === status); return eventStories.length ? <section className="event-results" key={status}><SectionHeading eyebrow={status === 'Upcoming' ? 'MARK YOUR CALENDAR' : 'JUST HAPPENED'} title={status} /><div className="story-grid">{eventStories.map((story) => <StoryCard key={story.id} story={story} />)}</div></section> : null }) : <><div className="category-featured"><StoryCard story={filtered[0]} variant="category-lead" /></div>{filtered.length > 1 && <div className="category-results"><SectionHeading eyebrow={`THE LATEST IN ${title.toUpperCase()}`} title="Worth your attention" /><div className="story-grid">{filtered.slice(1).map((story) => <StoryCard key={story.id} story={story} />)}</div></div>}</> : <div className="coming-soon topic-empty"><span className="eyebrow">NO SAMPLE ITEMS IN THIS TOPIC</span><p>Try another topic, or browse all {titleLabel.toLowerCase()}.</p><button className="text-link" onClick={() => updateFilter('topic', 'All')}>Show all {titleLabel.toLowerCase()} <ArrowRight size={15} /></button></div>}
-    <Newsletter /></main>
+    {filtered.length ? title === 'Events' ? ['Upcoming', 'Recent'].map((status) => { const eventStories = filtered.filter((story) => story.eventStatus === status); return eventStories.length ? <section className="event-results" key={status}><SectionHeading eyebrow={status === 'Upcoming' ? 'MARK YOUR CALENDAR' : 'JUST HAPPENED'} title={status} /><div className="story-grid">{eventStories.map((story) => <StoryCard key={story.id} story={story} />)}</div></section> : null }) : <><div className="category-featured"><StoryCard story={filtered[0]} variant="category-lead" /></div>{filtered.length > 1 && <div className="category-results"><SectionHeading eyebrow={`THE LATEST IN ${title.toUpperCase()}`} title="Worth your attention" /><div className="story-grid">{filtered.slice(1).map((story) => <StoryCard key={story.id} story={story} />)}</div></div>}</> : <div className="coming-soon topic-empty"><span className="eyebrow">NO LIVE ITEMS MATCH THESE FILTERS</span><p>Try another country, date range, or topic.</p><button className="text-link" onClick={() => { updateFilter('topic', 'All'); updateFilter('country', 'All'); updateFilter('date', 'All') }}>Clear filters <ArrowRight size={15} /></button></div>}
+    <CategorySources category={title} /><Newsletter /></main>
+}
+
+function FeedStatus() {
+  const { sources, refreshedAt, aiStatus, loading, error, refreshing, refresh } = useStories()
+  const healthySources = sources.filter((source) => source.status === 'ok').length
+  const updated = refreshedAt ? new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(refreshedAt)) : null
+  return <div className="feed-status" role="status"><span className={`feed-status-dot ${error ? 'has-error' : ''}`} /><span className="feed-status-copy"><strong>{loading ? 'Connecting to sources' : error ? 'Preview mode' : 'Live sources'}</strong><small>{error || (sources.length ? `${healthySources}/${sources.length} sources · updated ${updated || 'just now'}` : 'Waiting for source status')}</small></span><span className="feed-ai-status">{aiStatus === 'ready' ? 'AI summaries on' : 'Publisher summaries'}</span><button type="button" onClick={refresh} disabled={refreshing} aria-label="Refresh stories" title="Refresh stories"><RefreshCw size={15} className={refreshing ? 'is-spinning' : ''} /></button></div>
+}
+
+function FeedFilters({ country, date, onChange }) {
+  return <div className="feed-filters"><label><MapPin size={14} /><span>Country</span><select value={country} onChange={(event) => onChange('country', event.target.value)}><option value="All">All countries</option>{['Rwanda', 'Uganda', 'Kenya', 'Nigeria', 'Ghana', 'Tanzania', 'South Africa', 'Africa', 'Global'].map((value) => <option key={value} value={value}>{value}</option>)}</select></label><label><CalendarDays size={14} /><span>Date</span><select value={date} onChange={(event) => onChange('date', event.target.value)}><option value="All">Any time</option><option value="24h">Past 24 hours</option><option value="7d">Past 7 days</option><option value="30d">Past 30 days</option></select></label></div>
 }
 
 const categoryDescriptions = {
@@ -563,21 +577,25 @@ const categoryDescriptions = {
 }
 
 function SearchPage() {
+  const { stories } = useStories()
   const [params] = useSearchParams()
   const query = params.get('q') || ''
-  const matches = stories.filter((story) => `${story.title} ${story.summary} ${story.category} ${story.tag} ${story.topics?.join(' ') || ''}`.toLowerCase().includes(query.toLowerCase()))
-  return <main className="page-shell category-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><span>Search</span></div><section className="category-intro search-intro"><span className="eyebrow">SEARCH BRIEFA</span><h1>Results<span className="title-period">.</span></h1><p>Showing matches for <strong>“{query}”</strong></p><span className="category-count">{matches.length} {matches.length === 1 ? 'RESULT' : 'RESULTS'}</span></section>{matches.length ? <div className="story-grid search-results">{matches.map((story) => <StoryCard key={story.id} story={story} />)}</div> : <div className="coming-soon"><span className="eyebrow">NO MATCHES YET</span><p>Try another phrase, or browse our latest <Link to="/category/news">stories</Link> and <Link to="/category/opportunities">opportunities</Link>.</p></div>}</main>
+  const matches = stories.filter((story) => `${story.title} ${story.summary} ${story.category} ${story.tag} ${story.sourceName || ''} ${story.country || ''} ${story.topics?.join(' ') || ''}`.toLowerCase().includes(query.toLowerCase()))
+  return <main className="page-shell category-page"><FeedStatus /><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><span>Search</span></div><section className="category-intro search-intro"><span className="eyebrow">SEARCH BRIEFA</span><h1>Results<span className="title-period">.</span></h1><p>Showing matches for <strong>“{query}”</strong></p><span className="category-count">{matches.length} {matches.length === 1 ? 'RESULT' : 'RESULTS'}</span></section>{matches.length ? <div className="story-grid search-results">{matches.map((story) => <StoryCard key={story.id} story={story} />)}</div> : <div className="coming-soon"><span className="eyebrow">NO MATCHES YET</span><p>Try another phrase, or browse our latest <Link to="/category/news">stories</Link> and <Link to="/category/opportunities">opportunities</Link>.</p></div>}</main>
 }
 
 function StoryPage() {
+  const { stories, loading } = useStories()
   const { id } = useParams()
   const story = stories.find((item) => item.id === id)
+  if (!story && loading) return <main className="page-shell not-found"><span className="eyebrow">CONNECTING TO SOURCES</span><h1>Loading this story.</h1></main>
   if (!story) return <main className="page-shell not-found"><span className="eyebrow">404 · STORY NOT FOUND</span><h1>That page has moved.</h1><Link className="text-link" to="/">Back to the Briefa front page <ArrowRight size={15} /></Link></main>
   const related = stories.filter((item) => item.category === story.category && item.id !== story.id).slice(0, 2)
-  return <main className="page-shell article-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><Link to={`/category/${story.category.toLowerCase()}`}>{story.category}</Link><ChevronRight size={13} /><span>Story</span></div><article><header className="article-header"><Link className="eyebrow" to={`/category/${story.category.toLowerCase()}`}>{story.tag}</Link><h1>{story.title}</h1><p className="article-deck">{story.summary}</p><div className="article-meta"><div className="author-avatar">{story.author.split(' ').map((word) => word[0]).join('').slice(0, 2)}</div><span>By <strong>{story.author}</strong><small>{story.date} <i>·</i> {story.read}</small></span><SaveButton story={story} /></div></header><figure className="article-figure"><img src={story.image} alt="" /><figcaption>{story.location} <span>Image for illustrative purposes</span></figcaption></figure><div className="article-body"><aside className="article-aside"><span className="eyebrow">IN THIS STORY</span><a href="#article-start">The bigger picture</a><a href="#article-source">Source information <ArrowUpRight size={13} /></a></aside><div className="article-copy" id="article-start">{story.paragraphs.map((paragraph, index) => <p key={paragraph} className={index === 0 ? 'article-lede' : ''}>{paragraph}</p>)}<div className="source-note" id="article-source"><span className="eyebrow">ORIGINAL SOURCE</span><p>Sample content preview. The publisher’s original link will appear here when live stories are connected.</p></div></div></div></article>{related.length > 0 && <section className="related-section"><SectionHeading eyebrow="KEEP EXPLORING" title="More worth your time" /><div className="story-grid">{related.map((item) => <StoryCard key={item.id} story={item} />)}</div></section>}</main>
+  return <main className="page-shell article-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><Link to={`/category/${story.category.toLowerCase()}`}>{story.category}</Link><ChevronRight size={13} /><span>Story</span></div><article><header className="article-header"><Link className="eyebrow" to={`/category/${story.category.toLowerCase()}`}>{story.tag}</Link><h1>{story.title}</h1><p className="article-deck">{story.summary}</p><div className="article-meta"><div className="author-avatar">{story.author.split(' ').map((word) => word[0]).join('').slice(0, 2)}</div><span>By <strong>{story.author}</strong><small>{story.date} <i>·</i> {story.read}</small></span><SaveButton story={story} /></div></header><figure className="article-figure"><img src={story.image} alt="" /><figcaption>{story.location} <span>{story.sourceName || 'Briefa preview'}</span></figcaption></figure><div className="article-body"><aside className="article-aside"><span className="eyebrow">IN THIS STORY</span><a href="#article-start">The bigger picture</a><a href="#article-source">Source information <ArrowUpRight size={13} /></a></aside><div className="article-copy" id="article-start">{story.paragraphs.map((paragraph, index) => <p key={paragraph} className={index === 0 ? 'article-lede' : ''}>{paragraph}</p>)}<div className="source-note" id="article-source"><span className="eyebrow">ORIGINAL SOURCE</span>{story.sourceUrl ? <p><a href={story.sourceUrl} target="_blank" rel="noreferrer">Read the original report at {story.sourceName || 'the publisher'} <ArrowUpRight size={13} /></a></p> : <p>Live source details are unavailable while the feed is offline.</p>}</div></div></div></article>{related.length > 0 && <section className="related-section"><SectionHeading eyebrow="KEEP EXPLORING" title="More worth your time" /><div className="story-grid">{related.map((item) => <StoryCard key={item.id} story={item} />)}</div></section>}</main>
 }
 
 function SavedPage() {
+  const { stories } = useStories()
   const { saved } = useContext(SavedContext)
   const savedStories = stories.filter((story) => saved.includes(story.id))
   return <main className="page-shell category-page saved-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><span>Saved stories</span></div><section className="category-intro"><span className="eyebrow">YOUR READING LIST</span><h1>Saved<span className="title-period">.</span></h1><p>Stories worth coming back to, all in one place.</p><span className="category-count">{savedStories.length} SAVED {savedStories.length === 1 ? 'STORY' : 'STORIES'}</span></section>{savedStories.length ? <div className="story-grid">{savedStories.map((story) => <StoryCard key={story.id} story={story} />)}</div> : <div className="coming-soon empty-saved"><Bookmark size={22} /><span className="eyebrow">A LITTLE SPACE FOR LATER</span><p>Your reading list is waiting. Save a story that catches your eye and it’ll be here next time.</p><Link className="text-link" to="/category/news">Explore the latest <ArrowRight size={15} /></Link></div>}</main>
@@ -588,24 +606,68 @@ function AboutPage() {
 }
 
 function SourcesPage() {
-  return <main className="page-shell sources-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><span>Sources</span></div><section className="category-intro"><span className="eyebrow">HOW WE STAY INFORMED</span><h1>Sources<span className="title-period">.</span></h1><p>Publishers, institutions, and opportunity boards to explore at the original source.</p></section><p className="sources-note">These are example source links for the website preview. Every story’s verified original link should be provided with its live content.</p>{sourceGroups.map((group) => <section className="source-group" key={group.name}><SectionHeading eyebrow="PUBLISHERS & INSTITUTIONS" title={group.name} /><div className="source-grid">{group.sources.map((source) => <a href={source.url} className="source-item" key={source.name} target="_blank" rel="noreferrer"><span className="source-item-top"><span className="source-mark">{source.name.slice(0, 1)}</span><ArrowUpRight size={17} /></span><strong>{source.name}</strong><p>{source.description}</p><span className="source-url">{new URL(source.url).hostname}</span></a>)}</div></section>)}</main>
+  const { sources, refreshedAt } = useStories()
+  const updated = refreshedAt ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(refreshedAt)) : 'Awaiting first sync'
+  const allSourceGroups = [...sourceGroups, { name: 'Live platforms', sources: livePlatformLinks }, { name: 'Trending short videos', sources: trendingVideoPlatforms.map((platform) => ({ ...platform, description: `${platform.label} on ${platform.name}.` })) }]
+  return <main className="page-shell sources-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><span>Sources</span></div><section className="category-intro"><span className="eyebrow">HOW WE STAY INFORMED</span><h1>Sources<span className="title-period">.</span></h1><p>Publishers, institutions, and opportunity boards to explore at the original source.</p></section><section className="source-group"><SectionHeading eyebrow={`LAST SYNC · ${updated.toUpperCase()}`} title="Connected feeds" /><div className="source-grid">{sources.map((source) => <article className="source-item" key={source.name}><span className="source-item-top"><span className={`source-health ${source.status === 'ok' ? 'is-connected' : 'is-disconnected'}`}><span />{source.status === 'ok' ? 'Connected' : 'Unavailable'}</span><ArrowUpRight size={17} /></span><strong>{source.name}</strong><p>{source.status === 'ok' ? 'Live items are collected and linked to their original publisher.' : source.error || 'This source will be retried on the next sync.'}</p><span className="source-url">{source.status === 'ok' ? 'RSS/API feed' : 'Retrying automatically'}</span></article>)}</div></section><p className="sources-note">We use public RSS feeds and search feeds where direct APIs require credentials. Every live story links to its original source. Some publishers and social platforms require separate access approval before automatic collection is available.</p>{allSourceGroups.map((group) => <section className="source-group" key={group.name}><SectionHeading eyebrow="PUBLISHERS & INSTITUTIONS" title={group.name} /><div className="source-grid">{group.sources.map((source) => <a href={source.url} className="source-item" key={source.name} target="_blank" rel="noreferrer"><span className="source-item-top"><span className="source-mark">{source.name.slice(0, 1)}</span><ArrowUpRight size={17} /></span><strong>{source.name}</strong><p>{source.description}</p><span className="source-url">{new URL(source.url).hostname}</span></a>)}</div></section>)}</main>
 }
 
 function LivePage() {
-  const liveLinks = [
-    { name: 'BBC Africa Live', blurb: 'Live updates from Africa and around the world.', url: 'https://www.bbc.com/news/live' },
-    { name: 'Reuters World Live', blurb: 'Fast-moving global news, politics and markets.', url: 'https://www.reuters.com/world/' },
-    { name: 'UN News', blurb: 'Live reporting, updates and humanitarian announcements.', url: 'https://news.un.org/en/' },
-    { name: 'The Guardian Africa', blurb: 'Regional stories and ongoing developments.', url: 'https://www.theguardian.com/world/africa' },
-  ]
-
-  return <main className="page-shell live-page"><section className="live-hero"><div className="live-hero-copy"><span className="live-pill"><span className="live-dot" aria-hidden="true" /> Live now</span><h1>Fresh reporting, moving in real time.</h1><p>Developing stories, quick updates, and trusted sources for what matters now.</p><Link className="text-link" to="/">Back to homepage <ArrowRight size={15} /></Link></div><div className="live-hero-panel"><div className="live-hero-stat"><strong>24</strong><span>signal checks</span></div><div className="live-hero-stat"><strong>08</strong><span>active sources</span></div><div className="live-hero-stat"><strong>3m</strong><span>average refresh</span></div></div></section><div className="live-grid">{liveLinks.map((item) => <a key={item.name} href={item.url} className="live-card" target="_blank" rel="noreferrer"><span className="live-card-top"><span className="live-pill"><span className="live-dot" aria-hidden="true" />LIVE</span><ArrowUpRight size={16} /></span><strong>{item.name}</strong><p>{item.blurb}</p></a>)}</div></main>
+  const { sources, refreshedAt } = useStories()
+  const activeSources = sources.filter((source) => source.status === 'ok').length
+  const updated = refreshedAt ? new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(refreshedAt)) : 'pending'
+  return <main className="page-shell live-page"><FeedStatus /><section className="live-hero"><div className="live-hero-copy"><span className="live-pill"><span className="live-dot" aria-hidden="true" /> Live now</span><h1>Fresh reporting, moving in real time.</h1><p>Developing stories, quick updates, and trusted sources for what matters now.</p><Link className="text-link" to="/">Back to homepage <ArrowRight size={15} /></Link></div><div className="live-hero-panel"><div className="live-hero-stat"><strong>{String(sources.length).padStart(2, '0')}</strong><span>configured feeds</span></div><div className="live-hero-stat"><strong>{String(activeSources).padStart(2, '0')}</strong><span>connected now</span></div><div className="live-hero-stat"><strong>15m</strong><span>refresh interval</span></div></div></section><section className="source-group"><SectionHeading eyebrow="DIRECT LIVE LINKS FROM PHASE TWO" title="Watch live at the source" /><div className="live-grid">{livePlatformLinks.map((item) => <a key={item.name} href={item.url} className="live-card" target="_blank" rel="noreferrer"><span className="live-card-top"><span className="live-pill"><span className="live-dot" aria-hidden="true" />PLATFORM</span><ArrowUpRight size={16} /></span><strong>{item.name}</strong><p>{item.description}</p></a>)}</div></section><section className="source-group"><SectionHeading eyebrow="LIVE RSS/API HEALTH" title={`Connected feeds · ${activeSources}/${sources.length}`} /><div className="live-grid">{sources.map((item) => <a key={item.name} href={item.url} className="live-card" target="_blank" rel="noreferrer"><span className="live-card-top"><span className={`live-pill ${item.status === 'ok' ? '' : 'is-offline'}`}><span className="live-dot" aria-hidden="true" />{item.status === 'ok' ? 'CONNECTED' : 'RETRYING'}</span><ArrowUpRight size={16} /></span><strong>{item.name}</strong><p>{item.status === 'ok' ? `Feed connected. Last checked ${updated}.` : item.error || 'This source will be retried on the next sync.'}</p></a>)}</div></section></main>
 }
 
 function App() {
   const [saved, setSaved] = useState(readSaved)
+  const [feed, setFeed] = useState({ stories: [], sources: [], refreshedAt: null, aiStatus: 'not_configured', imageGenerationAvailable: false, trendingVideos: [] })
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [feedError, setFeedError] = useState('')
   const [locale, setLocale] = useState(() => localStorage.getItem('briefa-locale') || 'en')
   const [theme, setTheme] = useState(() => localStorage.getItem('briefa-theme') || 'light')
+  const loadStories = useCallback(async (force = false) => {
+    if (force) setRefreshing(true)
+    try {
+      const response = await fetch(`/api/stories${force ? '?refresh=true' : ''}`, { cache: 'no-store' })
+      if (!response.ok) throw new Error(`Feed API returned ${response.status}`)
+      const result = await response.json()
+      let generatedImages = {}
+      try { generatedImages = JSON.parse(localStorage.getItem('briefa-generated-images') || '{}') } catch {}
+      const items = (Array.isArray(result.items) ? result.items : []).map((item) => ({ ...item, image: generatedImages[item.id] || item.image }))
+      const sources = Array.isArray(result.sources) ? result.sources : []
+      if (!items.length && sources.length && sources.every((source) => source.status !== 'ok')) throw new Error('Live sources are currently unavailable')
+      setFeed({ stories: items, sources, refreshedAt: result.refreshedAt, aiStatus: result.aiStatus || 'not_configured', imageGenerationAvailable: Boolean(result.imageGenerationAvailable), trendingVideos: Array.isArray(result.trendingVideos) ? result.trendingVideos : [] })
+      setFeedError('')
+    } catch {
+      setFeed((current) => ({ ...current, stories: current.stories.length ? current.stories : seedStories }))
+      setFeedError('Live sources are unavailable. Showing preview items until they reconnect.')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+  const forceRefresh = useCallback(() => loadStories(true), [loadStories])
+  const generateStoryImage = useCallback(async (id) => {
+    const response = await fetch(`/api/stories/${id}/image`, { method: 'POST' })
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.error || 'Could not generate a story image.')
+    let generatedImages = {}
+    try { generatedImages = JSON.parse(localStorage.getItem('briefa-generated-images') || '{}') } catch {}
+    generatedImages[id] = result.image
+    localStorage.setItem('briefa-generated-images', JSON.stringify(generatedImages))
+    setFeed((current) => ({ ...current, stories: current.stories.map((story) => story.id === id ? { ...story, image: result.image } : story) }))
+    return result.image
+  }, [])
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => loadStories(), 0)
+    const timer = window.setInterval(() => loadStories(true), 15 * 60 * 1000)
+    return () => {
+      window.clearTimeout(initialLoad)
+      window.clearInterval(timer)
+    }
+  }, [loadStories])
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     localStorage.setItem('briefa-theme', theme)
@@ -619,7 +681,8 @@ function App() {
     localStorage.setItem('briefa-saved', JSON.stringify(next))
     return next
   })
-  return <LocaleContext.Provider value={{ locale, setLocale, theme, setTheme }}><SavedContext.Provider value={{ saved, toggleSaved }}><BrowserRouter><ScrollToTop /><div className="site-wrap" data-theme={theme}><Header /><Routes><Route path="/" element={<HomePage />} /><Route path="/category/:category" element={<CategoryPage />} /><Route path="/story/:id" element={<StoryPage />} /><Route path="/saved" element={<SavedPage />} /><Route path="/live" element={<LivePage />} /><Route path="/search" element={<SearchPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/sources" element={<SourcesPage />} /></Routes><Footer /></div></BrowserRouter></SavedContext.Provider></LocaleContext.Provider>
+  const storyContext = { ...feed, loading, error: feedError, refreshing, refresh: forceRefresh, generateStoryImage }
+  return <StoriesContext.Provider value={storyContext}><LocaleContext.Provider value={{ locale, setLocale, theme, setTheme }}><SavedContext.Provider value={{ saved, toggleSaved }}><BrowserRouter><ScrollToTop /><div className="site-wrap" data-theme={theme}><Header /><Routes><Route path="/" element={<HomePage />} /><Route path="/category/:category" element={<CategoryPage />} /><Route path="/story/:id" element={<StoryPage />} /><Route path="/saved" element={<SavedPage />} /><Route path="/live" element={<LivePage />} /><Route path="/search" element={<SearchPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/sources" element={<SourcesPage />} /></Routes><Footer /></div></BrowserRouter></SavedContext.Provider></LocaleContext.Provider></StoriesContext.Provider>
 }
 
 export default App
