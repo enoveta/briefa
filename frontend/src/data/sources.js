@@ -32,11 +32,11 @@ const categorySources = {
   Opportunities: [
     { name: 'ReliefWeb', description: 'Humanitarian jobs, grants, and calls for proposals.', url: 'https://reliefweb.int/' },
     { name: 'Africa No Filter Opportunity Hub', description: 'Grants and opportunities for African storytellers.', url: 'https://opportunity.africanofilter.org/' },
-    { name: 'YouthConnect Rwanda', description: 'Opportunities for young people in Rwanda.', url: 'https://youthconnect.rw/opportunities/' },
+    { name: 'YouthConnekt Rwanda', description: 'Opportunities for young people in Rwanda.', url: 'https://youthconnekt.rw/opportunities/' },
     { name: 'UNECA Opportunities', description: 'Economic development programmes and opportunities.', url: 'https://www.uneca.org/about/opportunities' },
-    { name: 'UNESCO Youth Grants', description: 'Youth grants and global grant schemes.', url: 'https://www.unesco.org/en/global-grant-scheme' },
+    { name: 'UNESCO Youth Grants', description: 'Youth grants and global grant schemes.', url: 'https://www.unesco.org/en/youth/global-grant-scheme' },
     { name: 'Open Opportunities Rwanda', description: 'Calls and opportunities for Rwanda.', url: 'https://openopportunities.org/opportunities-country/rwanda/' },
-    { name: 'Youth Opportunities', description: 'International opportunities for young people.', url: 'https://youthopportunities.org/' },
+    { name: 'Youth Opportunities', description: 'International opportunities for young people.', url: 'https://youthopp.yifoss.org/opportunities/' },
     { name: 'UNHCR Rwanda', description: 'Support and opportunities for refugees in Rwanda.', url: 'https://help.unhcr.org/rwanda/' },
   ],
   Events: [
@@ -47,6 +47,7 @@ const categorySources = {
     { name: 'UNESCO Events', description: 'International events and cultural programmes.', url: 'https://www.unesco.org/en/events' },
     { name: 'World Bank Events', description: 'Development events, briefings, and conferences.', url: 'https://www.worldbank.org/en/events' },
     { name: 'African Union', description: 'Official meetings, events, and announcements.', url: 'https://au.int/' },
+    { name: 'University & Conference Announcements', description: 'Use the host university or conference organiser’s official event page for confirmed details.', url: 'https://www.unesco.org/en/events' },
   ],
 }
 

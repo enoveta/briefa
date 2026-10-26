@@ -25,3 +25,34 @@ AI enrichment is disabled unless you provide a server-side API key. Copy `.env.e
 ## Social Video Sources
 
 The Video Discovery section links to official platform pages. Automated trend collection and embeds are not enabled because TikTok, Instagram, YouTube, Facebook, X, and Snapchat require platform-specific API credentials, approval, or permitted embed access. Add those integrations only after credentials and allowed usage are available.
+
+
+## Project handoff
+
+Read [`../HANDOFF_FOR_NEXT_AI.md`](../HANDOFF_FOR_NEXT_AI.md) and [`../PHASE2_STATUS.md`](../PHASE2_STATUS.md) before continuing development. Preserve the existing Briefa design and consult the supplied PDFs at the repository root.
+
+
+## Main project brief and continuation guide
+
+The product requirements and brand reference are included at the repository root. Read `../Brief main overview.pdf`, `../BRIEFA brand.pdf`, `../Briefa Phase 2 (1).pdf`, `../HANDOFF_FOR_NEXT_AI.md`, and `../PHASE2_STATUS.md`. Keep the existing Briefa UI and structure when implementing the next phase.
+
+## Admin content controls update (October 2026)
+- The admin content library supports searching/filtering managed and synced feed items, hiding/showing items, and pinning/unpinning stories.
+- Pinning now places a story first in the public story list and adds it to the Breaking topic; unpinning removes that priority.
+- Admin content and pin changes trigger a same-browser refresh so the public site reflects changes without waiting for the next scheduled feed refresh.
+- Current admin edits are stored in browser localStorage, so this is a project-preview workflow for the same browser/device, not yet a multi-admin/server-wide CMS. For production-wide control, move content status and pins into the API/database.
+
+## Admin content library notes
+
+The admin content library includes the live items returned by `/api/stories` after using **Refresh feeds**, plus locally managed listings. Use the category, publication/hidden, and pinned filters to locate items; use the external-link control to preview a listing's source page. Hide/Show and Pin/Unpin are currently stored in this browser's local storage and therefore do not yet provide server-wide moderation across devices or visitors. Do not treat this local-preview dashboard as a production-secure CMS until authenticated server-side content endpoints and shared database persistence are configured.
+
+## Image quality and enhancement
+
+Story images use fixed aspect-ratio containers and `object-fit: cover` to avoid stretching and reduce layout shifts. Admins can replace a managed item's image with a better image URL in the editor. AI image generation for feed stories is an optional server-side capability requiring `OPENAI_API_KEY`; it generates a new image rather than enhancing the existing publisher image, and must be reviewed before use. A dedicated original-vs-enhanced approval workflow and pixel-level enhancement API are not yet implemented in this project version. Never replace a published image without editorial approval.
+
+## Production checklist
+
+- Configure and test `OPENAI_API_KEY` only in the backend environment if AI image generation is required.
+- Before public deployment, implement authenticated admin sessions and server-side persistence for hide/show/pin/edit actions; local storage is browser-specific and can be modified by the visitor.
+- Configure analytics with a privacy-reviewed server-side analytics service if cross-device visitor reporting is required.
+- Run `npm ci`, `npm run lint`, and `npm run build` in `frontend` before deploying.
