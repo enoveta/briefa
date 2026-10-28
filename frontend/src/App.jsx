@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, Moon, Play, RefreshCw, Search, SlidersHorizontal, Sun, Tag, WandSparkles, X } from 'lucide-react'
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import briefaLogo from '../../BRIEF Logo.png'
 import { livePlatformLinks, sourceGroups, sourcesForCategory, trendingVideoPlatforms } from './data/sources.js'
@@ -50,194 +50,6 @@ const StoriesContext = createContext({ stories: [], sources: [], refreshedAt: nu
 function useStories() {
   return useContext(StoriesContext)
 }
-
-const seedStories = [
-  {
-    id: 'africa-climate', category: 'News', tag: 'CLIMATE & ENERGY', topics: ['Breaking', 'Trending Now', 'Africa', 'Energy', 'Environment & Climate'],
-    title: 'Africa’s next energy chapter is being written in its cities',
-    summary: 'A new generation of local power projects is changing the way communities think about access, resilience, and who gets to build the future.',
-    author: 'Nia Okafor', date: 'October 14, 2026', read: '6 min read', location: 'Kigali, Rwanda',
-    image: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1800&q=85',
-    paragraphs: [
-      'Across the continent, a quieter energy transition is taking shape one neighborhood at a time. From community solar to new city-backed microgrids, local teams are finding practical ways to make reliable power part of daily life.',
-      'The projects are modest compared with the region’s largest infrastructure plans, but their importance is hard to overstate. Reliable power means longer clinic hours, safer public spaces, and more room for small businesses to grow.',
-      'What comes next will depend on whether public institutions can keep pace with the people already doing the work. The strongest examples put local ownership, transparent financing, and long-term maintenance at the center.'
-    ],
-  },
-  {
-    id: 'rwanda-innovation', category: 'News', tag: 'RWANDA', topics: ['Trending Now', 'Rwanda (Local)', 'Technology & Innovation', 'Startups', 'Business & Economy'],
-    title: 'Kigali’s innovation district opens its doors to a new wave of founders',
-    summary: 'The city’s latest hub brings research teams, early-stage companies, and public services under one roof.',
-    author: 'Patrick Mutesi', date: 'October 13, 2026', read: '4 min read', location: 'Kigali, Rwanda',
-    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['A new shared workspace for early-stage companies has opened in Kigali, bringing founders closer to research partners and public services.', 'The district will host open programming for builders, investors, and students through the end of the year. Organizers say the goal is to make collaboration easier and more accessible.', 'Its first cohort includes teams working in climate data, digital finance, and logistics.'],
-  },
-  {
-    id: 'health-data', category: 'News', tag: 'AFRICA', topics: ['Africa', 'World', 'Health & Public Health', 'Science & Research'],
-    title: 'What better health data means for the clinics that need it most',
-    summary: 'Regional health teams are building more connected systems, with frontline staff helping shape the tools.',
-    author: 'Amara Diallo', date: 'October 12, 2026', read: '5 min read', location: 'Nairobi, Kenya',
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['Health teams are connecting local records to make supplies and staffing easier to plan.', 'The work puts frontline workers in the room early, helping ensure a new system solves the problems they actually face.', 'Several pilots are expected to share results before the end of the year.'],
-  },
-  {
-    id: 'rural-market-links', category: 'News', tag: 'FOOD SYSTEMS', topics: ['Africa', 'Business & Economy', 'Agriculture', 'Community'],
-    title: 'Rural market links are helping small farmers keep more of each harvest',
-    summary: 'New cooperative storage and transport partnerships are giving growers more options for when and where they sell.',
-    author: 'Briefa News Desk', date: 'October 11, 2026', read: '4 min read', location: 'East Africa',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: [
-      'Farmer cooperatives and local logistics teams are testing shared storage and transport arrangements to help small growers reach buyers beyond nearby markets.',
-      'By pooling deliveries and improving access to basic storage, participating groups aim to reduce losses and give farmers more flexibility when negotiating prices.',
-      'The long-term impact will depend on reliable infrastructure, transparent cooperative management, and continued access to buyers.'
-    ],
-  },
-  {
-    id: 'climate-fellowship', category: 'Scholarships', tag: 'FULLY FUNDED', topics: ['Fully Funded', 'Fellowships', 'For Africans', 'Research Grants'],
-    title: 'The 2027 climate leadership fellowship is now accepting applications',
-    summary: 'Early-career leaders can apply for a year of training, mentorship, and project support across Africa.',
-    author: 'Briefa Opportunities Desk', date: 'October 14, 2026', read: '3 min read', location: 'Africa-wide',
-    image: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['The fellowship invites early-career leaders working on climate resilience to apply for its 2027 cohort.', 'Selected fellows receive mentorship, training, and project support over a 12-month program. Applicants should be based in an African country and demonstrate experience working with local communities.', 'Applications close November 28, 2026. Visit the original program page to review eligibility and submit your application.'],
-  },
-  {
-    id: 'un-programme', category: 'Jobs', tag: 'UNITED NATIONS', topics: ['International Organizations (UN, NGOs)', 'Education & Research'],
-    title: 'Programme Officer, Youth Innovation',
-    summary: 'Help build programmes that connect young entrepreneurs with the resources to scale their ideas.',
-    author: 'UNDP', date: 'Closes November 02, 2026', read: 'Kigali · Hybrid', location: 'Kigali, Rwanda',
-    image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['The United Nations Development Programme is seeking a Programme Officer to support youth-led innovation initiatives in Rwanda.', 'The position works across public and private partners to design practical programs, track outcomes, and help local founders access mentorship and finance.', 'Applications close November 2, 2026. Review the full requirements and apply through the original listing.'],
-  },
-  {
-    id: 'regional-climate-analyst', category: 'Jobs', tag: 'CLIMATE & RESEARCH', topics: ['Remote', 'Environment & Climate', 'Science & Research'],
-    title: 'Regional Climate Data Analyst',
-    summary: 'Turn climate research into clear insights that help communities and policy teams plan for resilience.',
-    author: 'Briefa Demo Listings', date: 'Closes November 18, 2026', read: 'Nairobi · Hybrid', location: 'Nairobi, Kenya',
-    image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample role supports regional teams translating climate research into practical planning tools.', 'The analyst will work with researchers, local partners, and public institutions to build useful datasets and communicate findings.', 'This is demo listing content for the Briefa preview. Confirm details with the original employer before applying.'],
-  },
-  {
-    id: 'digital-health-coordinator', category: 'Jobs', tag: 'PUBLIC HEALTH', topics: ['Health & Medical', 'International Organizations (UN, NGOs)'],
-    title: 'Digital Health Programme Coordinator',
-    summary: 'Help health teams introduce practical digital tools and strengthen services across partner clinics.',
-    author: 'Briefa Demo Listings', date: 'Closes November 24, 2026', read: 'Kampala · Full-time', location: 'Kampala, Uganda',
-    image: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample position coordinates pilot projects that help clinics use digital tools in day-to-day care.', 'The role brings together clinical staff, technology teams, and community partners to support implementation and training.', 'This is demo listing content for the Briefa preview. Confirm details with the original employer before applying.'],
-  },
-  {
-    id: 'fintech-product-designer', category: 'Jobs', tag: 'TECHNOLOGY', topics: ['Tech & IT', 'Startups', 'Finance & Banking'],
-    title: 'Product Designer, Small Business Finance',
-    summary: 'Design accessible financial tools around the real working lives of independent businesses.',
-    author: 'Briefa Demo Listings', date: 'Closes December 01, 2026', read: 'Lagos · Hybrid', location: 'Lagos, Nigeria',
-    image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample design role focuses on digital services for small businesses and independent retailers.', 'The designer will collaborate with research, product, and engineering teams to make everyday financial tasks simpler.', 'This is demo listing content for the Briefa preview. Confirm details with the original employer before applying.'],
-  },
-  {
-    id: 'agriculture-partnerships-lead', category: 'Jobs', tag: 'FOOD SYSTEMS', topics: ['Agriculture', 'Government & Public Sector'],
-    title: 'Agriculture Partnerships Lead',
-    summary: 'Build partnerships that connect local producers with training, tools, and stronger markets.',
-    author: 'Briefa Demo Listings', date: 'Closes December 08, 2026', read: 'Kigali · Full-time', location: 'Kigali, Rwanda',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample role develops partnerships for farmer-focused training and market access programmes.', 'The lead will coordinate with cooperatives, public agencies, and private sector teams across the region.', 'This is demo listing content for the Briefa preview. Confirm details with the original employer before applying.'],
-  },
-  {
-    id: 'ocean-grant', category: 'Opportunities', tag: 'GRANT · $25,000', topics: ['Startup Funding & Grants', 'Tenders & Calls for Proposals', 'Business & Investment'],
-    title: 'Small grants, meaningful change: applications open for ocean innovators',
-    summary: 'A new fund is backing community-led ideas for healthier coastlines and stronger blue economies.',
-    author: 'Briefa Opportunities Desk', date: 'October 11, 2026', read: '4 min read', location: 'East Africa',
-    image: 'https://images.unsplash.com/photo-1484291470158-b8f8d608850d?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['A new regional fund will award small grants to community-led projects that protect marine ecosystems and livelihoods.', 'Applicants can request up to $25,000 for practical, locally driven work. A short concept note is the first step in the application process.', 'The deadline is November 18, 2026. Read the full call and requirements on the fund’s website.'],
-  },
-  {
-    id: 'women-founders-accelerator', category: 'Opportunities', tag: 'ACCELERATOR', topics: ['Accelerators & Incubators', 'Business & Investment'],
-    title: 'Applications open for the Women Founders Growth Lab',
-    summary: 'A hands-on programme pairs early-stage founders with mentors, market access, and investor readiness support.',
-    author: 'Briefa Demo Listings', date: 'Closes November 20, 2026', read: 'Virtual · Africa-wide', location: 'Africa-wide',
-    image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample accelerator programme supports women-led businesses preparing for their next stage of growth.', 'Participants receive practical workshops, mentor sessions, and introductions to regional business networks.', 'This is demo opportunity content for the Briefa preview. Check the organiser’s original page for eligibility and dates.'],
-  },
-  {
-    id: 'clean-energy-challenge', category: 'Opportunities', tag: 'CHALLENGE · ENERGY', topics: ['Competitions & Awards', 'Business & Investment'],
-    title: 'Clean energy innovators invited to a regional challenge',
-    summary: 'Teams can pitch solutions that make reliable, affordable energy easier to access in growing cities.',
-    author: 'Briefa Demo Listings', date: 'Closes November 27, 2026', read: 'Kigali · In person', location: 'Kigali, Rwanda',
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample challenge invites founders and researchers to present practical clean energy ideas.', 'Selected teams will receive feedback from technical mentors and meet potential implementation partners.', 'This is demo opportunity content for the Briefa preview. Check the organiser’s original page for eligibility and dates.'],
-  },
-  {
-    id: 'digital-skills-fellowship', category: 'Opportunities', tag: 'FELLOWSHIP', topics: ['Training Courses & Certifications', 'Technology & Innovation'],
-    title: 'Digital public services fellowship seeks its next cohort',
-    summary: 'Join a cross-disciplinary cohort learning to build more inclusive and useful digital services.',
-    author: 'Briefa Demo Listings', date: 'Closes December 04, 2026', read: 'Hybrid · East Africa', location: 'East Africa',
-    image: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample fellowship brings together people working on accessible public interest technology.', 'The cohort combines guided learning, peer exchange, and a small project developed with a local partner.', 'This is demo opportunity content for the Briefa preview. Check the organiser’s original page for eligibility and dates.'],
-  },
-  {
-    id: 'community-food-innovation', category: 'Opportunities', tag: 'INNOVATION GRANT', topics: ['Startup Funding & Grants', 'Agriculture & Food'],
-    title: 'Community food innovators can apply for seed support',
-    summary: 'Small teams are invited to test ideas that improve local food systems and support producers.',
-    author: 'Briefa Demo Listings', date: 'Closes December 12, 2026', read: 'Grant · Up to $10,000', location: 'Africa-wide',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['This sample grant supports early experiments that make local food systems more resilient.', 'Applicants may request seed funding for pilots developed with producer groups or community organisations.', 'This is demo opportunity content for the Briefa preview. Check the organiser’s original page for eligibility and dates.'],
-  },
-  {
-    id: 'creative-summit', category: 'Events', tag: 'SUMMIT · NAIROBI', topics: ['Upcoming Events', 'International Announcements', 'Conferences & Summits', 'Concerts & Entertainment'], region: 'International', eventStatus: 'Upcoming',
-    title: 'The people shaping Africa’s creative economy meet in Nairobi this month',
-    summary: 'A two-day gathering will bring together artists, policymakers, and the businesses building new markets.',
-    author: 'Briefa Culture Desk', date: 'October 10, 2026', read: 'October 28–29', location: 'Nairobi, Kenya',
-    image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['The Africa Creative Economy Summit returns to Nairobi this month with two days of talks, workshops, and exhibitions.', 'This year’s program brings artists and cultural leaders together with policymakers and business owners, with a focus on sustainable creative work.', 'The summit takes place October 28–29. Registration and the full schedule are available on the organizer’s website.'],
-  },
-  {
-    id: 'women-founders', category: 'News', tag: 'BUSINESS', topics: ['Trending Now', 'Business & Economy', 'Finance & Markets', 'Technology & Innovation'],
-    title: 'Meet the founders rethinking how small businesses get paid',
-    summary: 'Across three markets, fintech teams are building around the daily realities of independent retailers.',
-    author: 'Esther Mwangi', date: 'October 09, 2026', read: '7 min read', location: 'Lagos, Nigeria',
-    image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['Independent retailers have long had to make fragmented payment tools work for their businesses. A new group of founders is building products around how shops actually operate.', 'Their approach starts with listening: teams are working with retailers to understand cash flow, stock management, and the time pressures of running a small business.', 'The result is a new conversation about financial products designed to support, rather than complicate, everyday commerce.'],
-  },
-
-  {
-    id: 'africa-learning-labs', category: 'News', tag: 'EDUCATION', topics: ['Africa', 'Education', 'Science & Research'],
-    title: 'Community learning labs bring practical digital skills closer to young people',
-    summary: 'Local educators are pairing shared devices with hands-on lessons to make technology training more accessible.',
-    author: 'Briefa News Desk', date: 'October 08, 2026', read: '5 min read', location: 'East Africa',
-    image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['Community organisations are opening learning sessions where young people can practice digital skills with guidance from local mentors.', 'The programs focus on useful foundations, from online research and office tools to introductory coding and digital safety.', 'Their long-term reach will depend on reliable connectivity, equipment maintenance, and sustained support for instructors.'],
-  },
-  {
-    id: 'clean-cooking-enterprises', category: 'News', tag: 'CLIMATE & HEALTH', topics: ['Africa', 'Energy', 'Health & Public Health', 'Environment & Climate'],
-    title: 'Clean-cooking businesses look for ways to reach more households',
-    summary: 'Entrepreneurs are testing distribution and payment models designed around the budgets of everyday families.',
-    author: 'Briefa News Desk', date: 'October 07, 2026', read: '4 min read', location: 'East Africa',
-    image: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['Clean-cooking enterprises are exploring ways to make efficient stoves and fuels easier for households to access.', 'Some businesses are working with community distributors and flexible payment options to reduce the upfront cost for customers.', 'Affordability, dependable supply, and clear information about safe use remain central to wider adoption.'],
-  },
-  {
-    id: 'regional-transport-links', category: 'News', tag: 'TRADE & MOBILITY', topics: ['Africa', 'Business & Economy', 'Infrastructure'],
-    title: 'Regional transport links put small exporters in focus',
-    summary: 'Trade groups say clearer logistics and border procedures can help smaller firms reach customers across the region.',
-    author: 'Briefa News Desk', date: 'October 06, 2026', read: '5 min read', location: 'East Africa',
-    image: 'https://images.unsplash.com/photo-1494412519320-aa613dfb7738?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['Small exporters often face high delivery costs and complex paperwork when selling across borders.', 'Regional business groups are calling for more predictable logistics, accessible market information, and simpler processes for smaller shipments.', 'Progress will depend on coordination between transport operators, border agencies, and the businesses using these routes.'],
-  },
-  {
-    id: 'kigali-community-forum', category: 'Events', tag: 'COMMUNITY · KIGALI', topics: ['Local Announcements', 'Upcoming Events', 'Government & Institutional Notices'], region: 'Local', eventStatus: 'Upcoming',
-    title: 'Kigali community forum puts public spaces on the agenda',
-    summary: 'Residents, planners, and local organizations will meet for an open conversation about the city’s shared spaces.',
-    author: 'Briefa Community Desk', date: 'October 22, 2026', read: 'Free · Registration open', location: 'Kigali, Rwanda',
-    image: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['Kigali residents are invited to an open forum on the future of public spaces, bringing community groups, urban planners, and local officials together.', 'The evening will include short presentations and small-group discussions. Registration is free, with places available while capacity lasts.', 'The forum takes place October 22, 2026. This is sample event content for the Briefa website preview.'],
-  },
-  {
-    id: 'kigali-culture-week', category: 'Events', tag: 'RECENT · KIGALI', topics: ['Local Announcements', 'Commemorations & Anniversaries', 'Concerts & Entertainment'], region: 'Local', eventStatus: 'Recent',
-    title: 'A week of Kigali’s independent creative scene',
-    summary: 'Artists, small venues, and cultural groups opened their doors for a citywide programme of performances and workshops.',
-    author: 'Briefa Culture Desk', date: 'October 08, 2026', read: 'Past event · Kigali', location: 'Kigali, Rwanda',
-    image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1100&q=80',
-    paragraphs: ['Independent artists and venues across Kigali hosted a week of performances, workshops, and open studios.', 'The programme connected local creatives with audiences and highlighted spaces making room for new work.', 'This recap is sample event content for the Briefa website preview.'],
-  },
-]
 
 function readSaved() {
   try { return JSON.parse(localStorage.getItem('briefa-saved') || '[]') } catch { return [] }
@@ -320,6 +132,9 @@ function recordStoryClick(storyId) {
 }
 function storyClickProps(storyId) { return { onClick: () => recordStoryClick(storyId) } }
 
+function publisherInitials(story) { const label = story?.sourceName || story?.author || story?.tag || 'Briefa'; return String(label).split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'B' }
+function PublisherImage({ story, className = '', loading = 'lazy' }) { const [failed, setFailed] = useState(false); const initials = publisherInitials(story); if (!story?.image || failed) return <span className={`publisher-image-placeholder ${className}`} role="img" aria-label={`${story?.sourceName || story?.author || 'Publisher'} image unavailable`}><strong>{initials}</strong><small>{story?.sourceName || story?.author || 'BRIEFA'}</small></span>; return <img className={className} src={story.image} alt="" loading={loading} onError={() => setFailed(true)} /> }
+
 function StoryCard({ story, variant = 'standard' }) {
   const { imageGenerationAvailable, generateStoryImage } = useStories()
   if (['Jobs', 'Scholarships', 'Opportunities'].includes(story.category)) {
@@ -348,7 +163,7 @@ function StoryCard({ story, variant = 'standard' }) {
     }
   }
   return <article className={`story-card story-${variant}`}>
-    <div className="story-visual"><Link to={`/story/${story.id}`} className="story-image-link" {...storyClickProps(story.id)}><img src={story.image} alt="" loading="lazy" /><span className="image-arrow"><ArrowUpRight size={16} /></span></Link>{imageGenerationAvailable && story.sourceUrl && <button className="story-image-ai" type="button" onClick={createImage} disabled={generatingImage} title={imageError || 'Create an AI cover based on this story'}><WandSparkles size={13} />{generatingImage ? 'Creating' : 'AI cover'}</button>}</div>
+    <div className="story-visual"><Link to={`/story/${story.id}`} className="story-image-link" {...storyClickProps(story.id)}><PublisherImage story={story} /><span className="image-arrow"><ArrowUpRight size={16} /></span></Link>{imageGenerationAvailable && story.sourceUrl && <button className="story-image-ai" type="button" onClick={createImage} disabled={generatingImage} title={imageError || 'Create an AI cover based on this story'}><WandSparkles size={13} />{generatingImage ? 'Creating' : 'AI cover'}</button>}</div>
     <div className="story-card-copy"><div className="story-card-meta"><Link to={`/category/${story.category.toLowerCase()}`} className="eyebrow">{story.category}</Link><span>{story.read}</span></div><h3><Link to={`/story/${story.id}`} {...storyClickProps(story.id)}>{story.title}</Link></h3><p>{story.summary}</p>{['Jobs', 'Scholarships', 'Opportunities', 'Events'].includes(story.category) && <div className="listing-facts"><span><b>Source</b> {story.sourceName || story.author || 'Publisher'}</span>{story.deadline && <span><b>Deadline stated</b> {story.deadline}</span>}{story.eligibility && <span><b>Eligibility</b> {story.eligibility}</span>}{!story.deadline && <span className="fact-muted">Deadline not stated in the available source</span>}</div>}<div className="story-byline"><span>{story.author}</span><span className="byline-dot">·</span><span>{story.date}</span><SaveButton story={story} /></div>{story.sourceUrl && <a className="listing-source-link" href={story.sourceUrl} target="_blank" rel="noreferrer">Open original source <ArrowUpRight size={13} /></a>}</div>
   </article>
 }
@@ -366,8 +181,9 @@ function Newsletter() {
 
 function FeaturedStory() {
   const { stories } = useStories()
-  const featuredLimit = (() => { try { return Math.max(1, Math.min(6, Number(JSON.parse(localStorage.getItem('briefa-admin-settings') || '{}').sliderLimit) || 5)) } catch { return 5 } })()
-  const featured = stories.filter((story) => story.category === 'News').slice(0, featuredLimit)
+  const newsStories = stories.filter((story) => story.category === 'News')
+  const pinnedIds = (() => { try { return JSON.parse(localStorage.getItem('briefa-breaking-pinned') || '[]') } catch { return [] } })()
+  const featured = buildBreakingLineup(newsStories, pinnedIds).slice(0, 5)
   const [active, setActive] = useState(0)
   useEffect(() => {
     if (featured.length < 2) return undefined
@@ -379,7 +195,7 @@ function FeaturedStory() {
   const changeSlide = (step) => setActive((current) => (current + step + featured.length) % featured.length)
 
   return <section className="feature-section breaking-feature" aria-label="Breaking story">
-    <AnimatePresence mode="wait"><motion.div key={story.id} className="feature-image" initial={{ opacity: 0.6 }} animate={{ opacity: 1 }} exit={{ opacity: 0.7 }} transition={{ duration: 0.35 }}><Link to={`/story/${story.id}`} aria-label={`Read: ${story.title}`}><img src={story.image} alt="" /><span className="feature-image-caption"><Globe2 size={14} /> {story.location}</span></Link></motion.div></AnimatePresence>
+    <AnimatePresence mode="wait"><motion.div key={story.id} className="feature-image" initial={{ opacity: 0.6 }} animate={{ opacity: 1 }} exit={{ opacity: 0.7 }} transition={{ duration: 0.35 }}><Link to={`/story/${story.id}`} aria-label={`Read: ${story.title}`}><PublisherImage story={story} loading="eager" /><span className="feature-image-caption"><Globe2 size={14} /> {story.location}</span></Link></motion.div></AnimatePresence>
     <div className="feature-copy"><div className="feature-kicker"><span className="live-dot" /> BREAKING <span className="kicker-line" /> {String(active + 1).padStart(2, '0')} / {String(featured.length).padStart(2, '0')}</div>
       <AnimatePresence mode="wait"><motion.div key={story.id} className="feature-text" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
         <Link to={`/category/${story.category.toLowerCase()}`} className="eyebrow">{story.tag}</Link><h1><Link to={`/story/${story.id}`}>{story.title}</Link></h1><p className="feature-summary">{story.summary}</p><div className="feature-byline"><span>By {story.author}</span><span className="byline-dot">·</span><span>{story.read}</span><span className="byline-dot">·</span><span>{story.location}</span></div><Link className="feature-cta" to={`/story/${story.id}`}>Read the story <ArrowRight size={16} /></Link>
@@ -396,7 +212,7 @@ function DailyBriefRail() {
     <div className="daily-brief-heading"><span className="eyebrow">THE DAILY BRIEF</span><span className="live-dot" /></div>
     <div className="daily-brief-window"><div className="daily-brief-track">
       {briefStories.map((story) => <Link className="daily-brief-card" to={`/story/${story.id}`} key={story.id}>
-        <img src={story.image} alt="" loading="lazy" /><span className="daily-brief-copy"><small>{story.category} · {story.tag}</small><strong>{story.title}</strong><span>{story.read}</span></span><ArrowUpRight size={14} />
+        <PublisherImage story={story} /><span className="daily-brief-copy"><small>{story.category} · {story.tag}</small><strong>{story.title}</strong><span>{story.read}</span></span><ArrowUpRight size={14} />
       </Link>)}
     </div></div>
     <Link className="daily-brief-more" to="/category/news">All stories <ArrowRight size={14} /></Link>
@@ -534,7 +350,7 @@ function CategoryShowcase({ category, title, description, count }) {
   return <section className={`category-intro category-showcase category-showcase--${category.toLowerCase()}`}>
     <div className="showcase-copy"><span className="showcase-badge">{titleLabel.toUpperCase()}</span><p>{description}</p><span className="category-count">{count} STORIES & OPPORTUNITIES</span></div>
     <div className="showcase-media">
-      <motion.div className="showcase-slide" key={story.id} initial={{ opacity: 0.65 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}><Link to={isCategoryStory ? `/story/${story.id}` : `/category/${category.toLowerCase()}`} aria-label={isCategoryStory ? `Read: ${story.title}` : `Browse ${title}`}><img src={story.image} alt="" /><span className="showcase-caption">{isCategoryStory ? story.tag : `${title} · IN FOCUS`}<strong>{isCategoryStory ? story.title : description}</strong></span></Link></motion.div>
+      <motion.div className="showcase-slide" key={story.id} initial={{ opacity: 0.65 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}><Link to={isCategoryStory ? `/story/${story.id}` : `/category/${category.toLowerCase()}`} aria-label={isCategoryStory ? `Read: ${story.title}` : `Browse ${title}`}><PublisherImage story={story} loading="eager" /><span className="showcase-caption">{isCategoryStory ? story.tag : `${title} · IN FOCUS`}<strong>{isCategoryStory ? story.title : description}</strong></span></Link></motion.div>
       {slides.length > 1 && <div className="showcase-dots" aria-label={`${title} featured stories`}>{slides.map((item, index) => <button key={item.id} aria-label={`Show ${title} image ${index + 1}`} aria-pressed={index === active} className={index === active ? 'is-active' : ''} onClick={() => setActive(index)} />)}</div>}
     </div>
   </section>
@@ -559,7 +375,7 @@ function TrendingStories() {
     </div>
     <div className="trending-list">{trending.map((story, index) => <Link to={`/story/${story.id}`} className="trending-item" key={story.id} {...storyClickProps(story.id)}>
       <span className="trending-number">0{index + 1}</span>
-      <span className="trending-thumb">{story.image && <img src={story.image} alt="" loading="lazy" />}</span>
+      <span className="trending-thumb">{story.image && <PublisherImage story={story} />}</span>
       <span className="trending-item-copy"><span className="eyebrow">{story.category} · {story.tag}</span><strong>{story.title}</strong><small>{story.author || 'Briefa sources'} · {story.date}</small></span>
       <ArrowUpRight size={17} />
     </Link>)}</div>
@@ -573,7 +389,7 @@ function TrendingPhotoRail() {
     <div className="daily-brief-heading"><span className="eyebrow">TRENDING PHOTOS</span><span className="live-dot" /></div>
     <div className="daily-brief-window"><div className="daily-brief-track">
       {[...photoStories, ...photoStories].map((story, index) => <Link className="daily-brief-card" to={`/story/${story.id}`} key={`${story.id}-${index}`} aria-hidden={index >= photoStories.length} tabIndex={index >= photoStories.length ? -1 : undefined}>
-        <img src={story.image} alt="" loading="lazy" /><span className="daily-brief-copy"><small>{story.category} · {story.tag}</small><strong>{story.title}</strong></span><ArrowUpRight size={14} />
+        <PublisherImage story={story} /><span className="daily-brief-copy"><small>{story.category} · {story.tag}</small><strong>{story.title}</strong></span><ArrowUpRight size={14} />
       </Link>)}
     </div></div>
     <Link className="daily-brief-more" to="/category/news">All photos <ArrowRight size={14} /></Link>
@@ -751,7 +567,7 @@ function CategoryPreview({ category, hideSources = false }) {
   // Keep homepage sections distinct: the lead/breaking rail owns Breaking stories,
   // while the News grid fills from the remaining unique stories.
   const categoryItems = category === 'News'
-    ? [...stories.filter((story) => story.category === category), ...seedStories.filter((story) => story.category === category && !stories.some((live) => live.id === story.id))]
+    ? stories.filter((story) => story.category === category)
     : stories.filter((story) => story.category === category)
   const uniqueCategoryItems = categoryItems.filter((story, index, all) => all.findIndex((item) => item.id === story.id) === index)
   // Deduplicate syndicated copies while preserving the first publisher's image.
@@ -782,10 +598,10 @@ function CategoryPreview({ category, hideSources = false }) {
   )
   let sectionStories
   if (category === 'News') {
-    const regular = uniqueCoverageItems.filter((story) => !story.topics?.includes('Breaking'))
-    const breakingFallback = uniqueCoverageItems.filter((story) => story.topics?.includes('Breaking'))
+    const regular = uniqueCoverageItems.filter((story) => { const publisher = `${story.sourceName || ''} ${story.sourceUrl || ''} ${story.author || ''}`.toLowerCase(); return !story.topics?.includes('Breaking') && !/igihe|kigali[ .-]?today|kigalitoday/.test(publisher) })
+    const breakingFallback = []
     // Fill the requested eight-card grid when fewer than eight non-breaking stories exist.
-    sectionStories = [...regular, ...breakingFallback].slice(0, sectionLimit)
+    sectionStories = regular.slice(0, sectionLimit)
   } else {
     sectionStories = uniqueCoverageItems.slice(0, sectionLimit)
   }
@@ -845,6 +661,74 @@ function TendersPage() {
   return <main className="page-shell category-page tenders-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><Link to="/category/jobs">Jobs</Link><ChevronRight size={13} /><span>Tenders</span></div><section className="tenders-hero"><div><span className="eyebrow">BRIEFA PROCUREMENT DESK</span><h1>Tenders<span className="title-period">.</span></h1><p>Calls for proposals, procurement notices, and supplier opportunities from available sources. Always confirm requirements and deadlines with the issuing organization.</p><span className="category-count">{tenders.length} SOURCE-MATCHED NOTICES</span></div><div className="tenders-hero-mark"><span>OPEN</span><strong>Calls<br/>for work.</strong><small>Source-led. Updated with the feed.</small></div></section><CategorySources category="Opportunities" />{tenders.length ? <section className="category-results tender-results"><SectionHeading eyebrow="FROM AVAILABLE SOURCES" title="Latest tenders & calls" /><div className="story-grid">{tenders.map((story) => <StoryCard key={story.id} story={story} />)}</div></section> : <div className="coming-soon"><span className="eyebrow">NO MATCHING NOTICES IN THE CURRENT FEED</span><p>There are no source-matched tender notices available right now. Browse the official provider links above and check back as the feed refreshes.</p><Link className="text-link" to="/category/opportunities">Explore all opportunities <ArrowRight size={15} /></Link></div>}<Newsletter /></main>
 }
 
+function isPublisherStory(story, publisher) {
+  const source = `${story.sourceName || ''} ${story.sourceHome || ''} ${story.sourceUrl || ''} ${story.author || ''} ${story.tag || ''}`.toLowerCase()
+  if (publisher === 'kigali') return /kigali[ .-]?today|kigalitoday|kigali\.today|ktpress/.test(source)
+  if (publisher === 'igihe') return /igihe/.test(source)
+  if (publisher === 'bbc') return /bbc/.test(source) || /bbc\.co\.uk|bbc\.com/.test(source)
+  if (publisher === 'aljazeera') return /al.?jazeera/.test(source) || /aljazeera\.com/.test(source)
+  return false
+}
+
+function storiesAreDistinct(left, right) {
+  if (!left || !right) return false
+  if (left.id === right.id) return false
+  if (left.sourceUrl && right.sourceUrl && left.sourceUrl.split('?')[0] === right.sourceUrl.split('?')[0]) return false
+  if (headlineSimilarity(left.title, right.title)) return false
+  const words = (story) => new Set(normalizeHeadline(`${story.title || ''} ${story.summary || ''}`).split(' ').filter((word) => word.length > 3))
+  const a = words(left); const b = words(right)
+  if (Math.min(a.size, b.size) >= 10) {
+    const overlap = [...a].filter((word) => b.has(word)).length
+    if (overlap / (a.size + b.size - overlap) >= 0.55) return false
+  }
+  return true
+}
+
+function buildBreakingLineup(allStories, pinnedIds) {
+  const news = allStories.filter((story) => story.category === 'News' && story.title)
+  const byRecent = (a, b) => (Date.parse(b.publishedAt || b.date || '') || 0) - (Date.parse(a.publishedAt || a.date || '') || 0)
+  const pinnedLookup = new Map(news.map((story) => [story.id, story]))
+  const pinnedUnique = []
+  for (const id of [...new Set(Array.isArray(pinnedIds) ? pinnedIds : [])]) {
+    const story = pinnedLookup.get(id)
+    if (!story || pinnedUnique.some((existing) => !storiesAreDistinct(existing, story))) continue
+    pinnedUnique.push(story)
+    if (pinnedUnique.length === 5) break
+  }
+  const pinnedSet = new Set(pinnedUnique.map((story) => story.id))
+  const seenIds = new Set()
+  const unique = news.filter((story) => {
+    if (pinnedSet.has(story.id) || seenIds.has(story.id)) return false
+    seenIds.add(story.id)
+    return Boolean(story.sourceUrl || story.sourceName)
+  }).sort(byRecent)
+  const lineup = []
+  const add = (story) => {
+    if (!story || lineup.length >= 5 - pinnedUnique.length) return
+    if (lineup.some((item) => !storiesAreDistinct(item, story))) return
+    lineup.push(story)
+  }
+  // Strict source order for the unpinned lead slots: Rwanda x2, BBC, Al Jazeera, then either international source.
+  const slots = [
+    unique.filter((story) => isPublisherStory(story, 'kigali') && Boolean(story.image)),
+    unique.filter((story) => isPublisherStory(story, 'igihe') && Boolean(story.image)),
+    unique.filter((story) => isPublisherStory(story, 'bbc')),
+    unique.filter((story) => isPublisherStory(story, 'aljazeera')),
+    unique.filter((story) => isPublisherStory(story, 'bbc') || isPublisherStory(story, 'aljazeera')),
+  ]
+  for (const candidates of slots) {
+    if (lineup.length >= 5 - pinnedUnique.length) break
+    add(candidates.find((candidate) => !lineup.some((item) => !storiesAreDistinct(item, candidate))))
+  }
+  // Fill any missing slots with the most recent distinct stories; never repeat the same story twice.
+  for (const story of unique) {
+    if (lineup.length >= 5 - pinnedUnique.length) break
+    add(story)
+  }
+  // Pinned stories replace slots from the end: one pin is slot 5; two pins are slots 4 and 5.
+  return [...lineup, ...pinnedUnique.slice(-5).reverse()].slice(0, 5)
+}
+
 function CategoryPage() {
   const { category } = useParams()
   const { stories } = useStories()
@@ -861,7 +745,9 @@ function CategoryPage() {
   const dateWindows = { '24h': 24 * 60 * 60 * 1000, '7d': 7 * 24 * 60 * 60 * 1000, '30d': 30 * 24 * 60 * 60 * 1000 }
   const [now] = useState(() => Date.now())
   const titleLabel = title === 'Events' ? 'Events & Announcements' : title
-  const filtered = stories.filter((story) => story.category === title && (selectedTopic === 'All' || story.topics?.includes(selectedTopic)) && (selectedCountry === 'All' || story.country === selectedCountry) && (!dateWindows[selectedDate] || now - Date.parse(story.publishedAt) <= dateWindows[selectedDate]) && (title !== 'Events' || selectedRegion === 'All' || story.region === selectedRegion) && (title !== 'News' || selectedRegion === 'All' || (selectedRegion === 'Africa' ? (story.country && story.country !== 'Global' && story.country !== 'Rwanda') || story.topics?.includes('Africa') : selectedRegion === 'World' ? story.country === 'Global' || story.topics?.includes('World') : true)) && (title !== 'Events' || selectedStatus === 'All' || story.eventStatus === selectedStatus))
+  const pinnedBreakingIds = (() => { try { return JSON.parse(localStorage.getItem('briefa-breaking-pinned') || '[]') } catch { return [] } })()
+  const filteredBase = stories.filter((story) => story.category === title && (selectedTopic === 'All' || story.topics?.includes(selectedTopic)) && (selectedCountry === 'All' || story.country === selectedCountry) && (!dateWindows[selectedDate] || now - Date.parse(story.publishedAt) <= dateWindows[selectedDate]) && (title !== 'Events' || selectedRegion === 'All' || story.region === selectedRegion) && (title !== 'News' || selectedRegion === 'All' || (selectedRegion === 'Africa' ? (story.country && story.country !== 'Global' && story.country !== 'Rwanda') || story.topics?.includes('Africa') : selectedRegion === 'World' ? story.country === 'Global' || story.topics?.includes('World') : true)) && (title !== 'Events' || selectedStatus === 'All' || story.eventStatus === selectedStatus))
+  const filtered = title === 'News' && selectedTopic === 'Breaking' ? buildBreakingLineup(stories, pinnedBreakingIds) : filteredBase
   const updateFilter = (key, value) => {
     const nextParams = new URLSearchParams(searchParams)
     if (value === 'All') nextParams.delete(key)
@@ -893,7 +779,7 @@ function FeedStatus() {
   const { sources, refreshedAt, aiStatus, loading, error, refreshing, refresh } = useStories()
   const healthySources = sources.filter((source) => source.status === 'ok').length
   const updated = refreshedAt ? new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(refreshedAt)) : null
-  return <div className="feed-status" role="status"><span className={`feed-status-dot ${error ? 'has-error' : ''}`} /><span className="feed-status-copy"><strong>{loading ? 'Connecting to sources' : error ? 'Preview mode' : 'Live sources'}</strong><small>{error || (sources.length ? `${healthySources}/${sources.length} sources · updated ${updated || 'just now'}` : 'Waiting for source status')}</small></span><span className="feed-ai-status">{aiStatus === 'ready' ? 'AI summaries on' : 'Publisher summaries'}</span><button type="button" onClick={refresh} disabled={refreshing} aria-label="Refresh stories" title="Refresh stories"><RefreshCw size={15} className={refreshing ? 'is-spinning' : ''} /></button></div>
+  return <div className="feed-status" role="status"><span className={`feed-status-dot ${error ? 'has-error' : ''}`} /><span className="feed-status-copy"><strong>{loading ? 'Connecting to sources' : error ? 'Sources unavailable' : 'Live sources'}</strong><small>{error || (sources.length ? `${healthySources}/${sources.length} sources · updated ${updated || 'just now'}` : 'Waiting for source status')}</small></span><span className="feed-ai-status">{aiStatus === 'ready' ? 'AI summaries on' : 'Publisher summaries'}</span><button type="button" onClick={refresh} disabled={refreshing} aria-label="Refresh stories" title="Refresh stories"><RefreshCw size={15} className={refreshing ? 'is-spinning' : ''} /></button></div>
 }
 
 function FeedFilters({ country, date, onChange }) {
@@ -923,7 +809,7 @@ function StoryPage() {
   if (!story && loading) return <main className="page-shell not-found"><span className="eyebrow">CONNECTING TO SOURCES</span><h1>Loading this story.</h1></main>
   if (!story) return <main className="page-shell not-found"><span className="eyebrow">404 · STORY NOT FOUND</span><h1>That page has moved.</h1><Link className="text-link" to="/">Back to the Briefa front page <ArrowRight size={15} /></Link></main>
   const related = stories.filter((item) => item.category === story.category && item.id !== story.id).slice(0, 2)
-  return <main className="page-shell article-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><Link to={`/category/${story.category.toLowerCase()}`}>{story.category}</Link><ChevronRight size={13} /><span>Story</span></div><article><header className="article-header"><Link className="eyebrow" to={`/category/${story.category.toLowerCase()}`}>{story.tag}</Link><h1>{story.title}</h1><p className="article-deck">{story.summary}</p><div className="article-meta"><div className="author-avatar">{story.author.split(' ').map((word) => word[0]).join('').slice(0, 2)}</div><span>By <strong>{story.author}</strong><small>{story.date} <i>·</i> {story.read}</small></span><SaveButton story={story} /></div></header><figure className="article-figure"><img src={story.image} alt="" /><figcaption>{story.location} <span>{story.sourceName || 'Briefa preview'}</span></figcaption></figure><div className="article-body"><aside className="article-aside"><span className="eyebrow">IN THIS STORY</span><a href="#article-start">The bigger picture</a><a href="#article-source">Source information <ArrowUpRight size={13} /></a></aside><div className="article-copy" id="article-start">{story.paragraphs.map((paragraph, index) => <p key={paragraph} className={index === 0 ? 'article-lede' : ''}>{paragraph}</p>)}<div className="source-note" id="article-source"><div className="source-note-icon"><Globe2 size={19} /></div><div className="source-note-copy"><span className="eyebrow">VERIFY AT THE SOURCE</span><strong>{story.sourceName || 'Original publisher'}</strong><p>Read the full report and confirm the details directly with the publisher.</p></div>{story.sourceUrl ? <a className="source-action" href={story.sourceUrl} target="_blank" rel="noreferrer">Visit source <ArrowUpRight size={16} /></a> : <span className="source-action is-disabled">Source unavailable</span>}</div></div></div></article>{related.length > 0 && <section className="related-section"><SectionHeading eyebrow="KEEP EXPLORING" title="More worth your time" /><div className="story-grid">{related.map((item) => <StoryCard key={item.id} story={item} />)}</div></section>}</main>
+  return <main className="page-shell article-page"><div className="breadcrumb"><Link to="/">Home</Link><ChevronRight size={13} /><Link to={`/category/${story.category.toLowerCase()}`}>{story.category}</Link><ChevronRight size={13} /><span>Story</span></div><article><header className="article-header"><Link className="eyebrow" to={`/category/${story.category.toLowerCase()}`}>{story.tag}</Link><h1>{story.title}</h1><p className="article-deck">{story.summary}</p><div className="article-meta"><div className="author-avatar">{story.author.split(' ').map((word) => word[0]).join('').slice(0, 2)}</div><span>By <strong>{story.author}</strong><small>{story.date} <i>·</i> {story.read}</small></span><SaveButton story={story} /></div></header><figure className="article-figure"><PublisherImage story={story} loading="eager" /><figcaption>{story.location} <span>{story.sourceName || 'Briefa preview'}</span></figcaption></figure><div className="article-body"><aside className="article-aside"><span className="eyebrow">IN THIS STORY</span><a href="#article-start">The bigger picture</a><a href="#article-source">Source information <ArrowUpRight size={13} /></a></aside><div className="article-copy" id="article-start">{story.paragraphs.map((paragraph, index) => <p key={paragraph} className={index === 0 ? 'article-lede' : ''}>{paragraph}</p>)}<div className="source-note" id="article-source"><div className="source-note-icon"><Globe2 size={19} /></div><div className="source-note-copy"><span className="eyebrow">VERIFY AT THE SOURCE</span><strong>{story.sourceName || 'Original publisher'}</strong><p>Read the full report and confirm the details directly with the publisher.</p></div>{story.sourceUrl ? <a className="source-action" href={story.sourceUrl} target="_blank" rel="noreferrer">Visit source <ArrowUpRight size={16} /></a> : <span className="source-action is-disabled">Source unavailable</span>}</div></div></div></article>{related.length > 0 && <section className="related-section"><SectionHeading eyebrow="KEEP EXPLORING" title="More worth your time" /><div className="story-grid">{related.map((item) => <StoryCard key={item.id} story={item} />)}</div></section>}</main>
 }
 
 function SavedPage() {
@@ -994,19 +880,21 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [feedError, setFeedError] = useState('')
+  const requestInFlight = useRef(false)
+  const feedStoriesRef = useRef([])
   const [locale, setLocale] = useState(() => localStorage.getItem('briefa-locale') || 'en')
   const [theme, setTheme] = useState(() => localStorage.getItem('briefa-theme') || 'light')
   const [settingsVersion, setSettingsVersion] = useState(0)
   useEffect(() => { const onSettingsUpdate = () => setSettingsVersion((value) => value + 1); window.addEventListener('briefa-settings-updated', onSettingsUpdate); return () => window.removeEventListener('briefa-settings-updated', onSettingsUpdate) }, [])
   const loadStories = useCallback(async (force = false) => {
+    if (requestInFlight.current) return
+    requestInFlight.current = true
     if (force) setRefreshing(true)
     try {
-      const response = await fetch(`/api/stories${force ? '?refresh=true' : ''}`, { cache: 'no-store' })
+      const response = await fetch(`/api/stories${force ? '?refresh=true' : ''}`, { cache: 'no-store', signal: AbortSignal.timeout(12000) })
       if (!response.ok) throw new Error(`Feed API returned ${response.status}`)
       const result = await response.json()
-      let generatedImages = {}
-      try { generatedImages = JSON.parse(localStorage.getItem('briefa-generated-images') || '{}') } catch {}
-      const liveItems = (Array.isArray(result.items) ? result.items : []).map((item) => ({ ...item, image: item.image || generatedImages[item.id] || '' }))
+      const liveItems = (Array.isArray(result.items) ? result.items : []).map((item) => ({ ...item, image: item.image || '' }))
       let managedItems = []
       let allManagedItems = []
       try {
@@ -1027,17 +915,20 @@ function App() {
           }))
       } catch {}
       const managedIds = new Set(allManagedItems.map((item) => item.id))
-      const items = [...managedItems, ...liveItems.filter((item) => !managedIds.has(item.id))]
+      const apiItems = liveItems
+      const items = [...managedItems, ...apiItems.filter((item) => !managedIds.has(item.id))]
       const sources = Array.isArray(result.sources) ? result.sources : []
       if (!items.length && sources.length && sources.every((source) => source.status !== 'ok')) throw new Error('Live sources are currently unavailable')
+      feedStoriesRef.current = items
       setFeed({ stories: items, sources, refreshedAt: result.refreshedAt, aiStatus: result.aiStatus || 'not_configured', imageGenerationAvailable: Boolean(result.imageGenerationAvailable), trendingVideos: Array.isArray(result.trendingVideos) ? result.trendingVideos : [] })
       setFeedError('')
     } catch {
-      setFeed((current) => ({ ...current, stories: current.stories.length ? current.stories : seedStories }))
-      setFeedError('Live sources are unavailable. Showing preview items until they reconnect.')
+      setFeed((current) => ({ ...current, stories: current.stories }))
+      setFeedError('Live sources are temporarily unavailable. Previously loaded stories remain available while sources reconnect.')
     } finally {
       setLoading(false)
       setRefreshing(false)
+      requestInFlight.current = false
     }
   }, [])
   const forceRefresh = useCallback(() => loadStories(true), [loadStories])
@@ -1063,10 +954,14 @@ function App() {
   }, [])
   useEffect(() => {
     const initialLoad = window.setTimeout(() => loadStories(), 0)
+    // Publisher image metadata is enriched in the background; re-read the cached feed once so
+    // the two Rwanda publisher slides can appear without making the initial homepage load wait.
+    const imageEnrichmentRefresh = window.setTimeout(() => { if (document.visibilityState === 'visible') loadStories(false) }, 8000)
     // Keep the public feed fresh automatically, regardless of local admin preferences.
-    const timer = window.setInterval(() => loadStories(true), 5 * 60 * 1000)
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') loadStories(false) }, 10 * 60 * 1000)
     return () => {
       window.clearTimeout(initialLoad)
+      window.clearTimeout(imageEnrichmentRefresh)
       window.clearInterval(timer)
     }
   }, [loadStories, settingsVersion])

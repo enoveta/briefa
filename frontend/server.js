@@ -8,86 +8,15 @@ import { XMLParser } from 'fast-xml-parser'
 const port = Number(process.env.API_PORT || 8787)
 const refreshInterval = 15 * 60 * 1000
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
-const fallbackImages = {
-  News: [
-    ['health|hospital|clinic|disease|medical|public health', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'],
-    ['climate|environment|energy|flood|drought|wildlife', 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1200&q=80'],
-    ['business|economy|market|trade|finance|company', 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80'],
-    ['protest|demonstrat|march|riot|civil unrest|strike|rally', 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80'],
-    ['politic|government|election|president|parliament', 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80'],
-    ['education|school|university|student|teacher', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80'],
-    ['technology|digital|software|artificial intelligence|innovation', 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80'],
-    ['agricultur|farm|food|harvest', 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80'],
-    ['rwanda|kigali|city|urban', 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80'],
-    ['community|people|youth|family', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80'],
-    ['water|ocean|marine|coast', 'https://images.unsplash.com/photo-1484291470158-b8f8d608850d?auto=format&fit=crop&w=1200&q=80'],
-    ['transport|road|traffic|rail|aviation', 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1200&q=80'],
-  ],
-  Jobs: [
-    ['health|medical|clinic|nurse|doctor', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'],
-    ['agricultur|food|farm', 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80'],
-    ['technology|software|digital|data|engineering', 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80'],
-    ['climate|environment|energy', 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1200&q=80'],
-    ['education|research|university|teacher', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80'],
-    ['finance|bank|accounting|investment', 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=80'],
-    ['construction|civil|building|architect', 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80'],
-    ['ngo|humanitarian|development|community', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'],
-  ],
-  Scholarships: [
-    ['research|science|phd|doctoral|laboratory', 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80'],
-    ['japan|asia|exchange', 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80'],
-    ['climate|environment', 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1200&q=80'],
-    ['health|medical', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'],
-    ['engineering|technology|computer|digital', 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80'],
-    ['africa|african|rwanda|youth', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?auto=format&fit=crop&w=1200&q=80'],
-  ],
-  Opportunities: [
-    ['ocean|marine|coast', 'https://images.unsplash.com/photo-1484291470158-b8f8d608850d?auto=format&fit=crop&w=1200&q=80'],
-    ['energy|solar|power', 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=80'],
-    ['food|agricultur|farm', 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80'],
-    ['women|founder|startup|business|entrepreneur', 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80'],
-    ['technology|digital|innovation', 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80'],
-    ['youth|community|training|volunteer', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80'],
-    ['education|scholarship|student', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80'],
-  ],
-  Events: [
-    ['music|concert|festival|creative|performance', 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1200&q=80'],
-    ['kigali|community|rwanda', 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80'],
-    ['conference|summit|forum|meeting|panel', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80'],
-    ['technology|tech|innovation', 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80'],
-    ['sports|football|tournament', 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80'],
-    ['education|university|student', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1509824227185-9c5a01ceba0d?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80'],
-    ['', 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80'],
-  ],
-}
 const googleNews = (query) => `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en&gl=RW&ceid=RW:en`
 const feeds = [
   { category: 'News', name: 'BBC News Africa', url: 'https://feeds.bbci.co.uk/news/world/africa/rss.xml' },
   { category: 'News', name: 'UN News', url: 'https://news.un.org/feed/subscribe/en/news/all/rss.xml' },
   { category: 'News', name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
-  { category: 'News', name: 'ReliefWeb', url: 'https://reliefweb.int/updates/rss.xml' },
   { category: 'News', name: 'World Health Organization', url: 'https://www.who.int/rss-feeds/news-english.xml' },
   { category: 'News', name: 'Reuters Africa', url: googleNews('site:reuters.com/world/africa Africa news') },
+  { category: 'News', name: 'Igihe Rwanda', url: googleNews('site:igihe.com Rwanda Kigali latest news') },
+  { category: 'News', name: 'Kigali Today', url: googleNews('site:kigali.today OR site:kigalitoday.com Rwanda Kigali news') },
   { category: 'News', name: 'Rwanda Government', url: googleNews('site:gov.rw Rwanda government news') },
   { category: 'News', name: 'World Bank News', url: googleNews('site:worldbank.org/en/news Africa development') },
   // Jobs: targeted queries keep listings closer to the official providers in the Phase 2 brief.
@@ -96,6 +25,8 @@ const feeds = [
   { category: 'Jobs', name: 'World Bank Careers', url: googleNews('site:worldbank.org/ext/en/careers job vacancy') },
   { category: 'Jobs', name: 'African Union Careers', url: googleNews('site:au.int/en/careers vacancy') },
   { category: 'Jobs', name: 'African Development Bank Careers', url: googleNews('site:afdb.org/en/about-us/careers vacancy') },
+  { category: 'Jobs', name: 'Igihe Rwanda Jobs', url: googleNews('site:igihe.com jobs employment Rwanda vacancy') },
+  { category: 'Jobs', name: 'Kigali Today Jobs', url: googleNews('site:kigali.today OR site:kigalitoday.com jobs vacancy Rwanda') },
   { category: 'Jobs', name: 'Rwanda Development Board', url: googleNews('site:rdb.rw jobs careers vacancy') },
   { category: 'Jobs', name: 'Rwanda Public Service Recruitment', url: googleNews('site:recruitment.mifotra.gov.rw vacancy') },
   { category: 'Jobs', name: 'Impactpool', url: googleNews('site:impactpool.org jobs Africa Rwanda') },
@@ -109,7 +40,6 @@ const feeds = [
   { category: 'Scholarships', name: 'Study in Japan', url: googleNews('site:studyinjapan.go.jp/en scholarship') },
   { category: 'Scholarships', name: 'EducationUSA', url: googleNews('site:educationusa.state.gov scholarship funding') },
   // Grants, fellowships, training and calls for proposals.
-  { category: 'Opportunities', name: 'ReliefWeb opportunities', url: 'https://reliefweb.int/updates/rss.xml' },
   { category: 'Opportunities', name: 'Africa No Filter Opportunity Hub', url: googleNews('site:opportunity.africanofilter.org grant opportunity') },
   { category: 'Opportunities', name: 'YouthConnekt Rwanda', url: googleNews('site:youthconnekt.rw/opportunities opportunity Rwanda') },
   { category: 'Opportunities', name: 'UNECA Opportunities', url: googleNews('site:uneca.org/about/opportunities fellowship grant') },
@@ -173,7 +103,7 @@ const topicRules = {
   ],
   Jobs: [
     ['Remote', /remote|work from home/i],
-    ['International Organizations (UN, NGOs)', /united nations|\bun\b|ngo|reliefweb|humanitarian|development/i],
+    ['International Organizations (UN, NGOs)', /united nations|\bun\b|ngo|humanitarian|development/i],
     ['Tech & IT', /software|technology|digital|data|engineering/i],
     ['Health & Medical', /health|medical|clinical|nurse|doctor/i],
     ['Education & Research', /education|research|university|teacher/i],
@@ -316,12 +246,6 @@ function categoryTopicsFallback(category) {
   return ({ Jobs: 'Remote', Scholarships: 'For Africans', Opportunities: 'Business & Investment', Events: 'Upcoming Events' })[category] || 'Africa'
 }
 
-function fallbackImageFor(category, text, id) {
-  const choices = fallbackImages[category] || fallbackImages.News
-  const matching = choices.find(([keywords]) => keywords && new RegExp(keywords, 'i').test(text))
-  const index = Number.parseInt(id.slice(0, 8), 16) % choices.length
-  return (matching || choices[index] || choices[choices.length - 1])[1]
-}
 
 function imageFromMarkup(...values) {
   for (const value of values) {
@@ -342,15 +266,16 @@ function normalizeEntry(entry, feed) {
   const rawDate = firstValue(entry.pubDate, entry.published, entry.updated, entry['dc:date'])
   const parsedDate = rawDate ? new Date(rawDate) : new Date()
   const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString()
-  const sourceName = firstValue(entry.source, entry.author, feed.name) || feed.name
-  const sourceHome = entry.source?.['@_url'] || new URL(link).origin
+  // Google News RSS represents <source> as an object; use its display text, not '[object Object]' or its URL.
+  const sourceName = firstValue(entry.source?.['#text'], entry.source?.text, entry.author, feed.name) || feed.name
+  const sourceHome = entry.source?.['@_url'] || entry.source?.['@_href'] || new URL(link).origin
   const text = `${title} ${description}`
   const country = countryFor(text)
   const id = createHash('sha256').update(link).digest('hex').slice(0, 18)
   const feedImage = imageFromFeed(entry['media:thumbnail'], entry['media:content'], entry.enclosure)
   const embeddedImage = imageFromMarkup(entry['content:encoded'], entry.description, entry.summary, entry.content)
-  const imageUrl = feedImage || embeddedImage || fallbackImageFor(feed.category, text, id)
-  const imageOrigin = feedImage ? 'feed' : embeddedImage ? 'article_markup' : 'topic_fallback'
+  const imageUrl = feedImage || embeddedImage || ''
+  const imageOrigin = feedImage ? 'feed' : embeddedImage ? 'article_markup' : 'publisher_placeholder'
   const eventStatus = /past event|recap|concluded|held on|took place/i.test(text) ? 'Recent' : 'Upcoming'
   const summary = description.length > 280 ? `${description.slice(0, 277).trimEnd()}...` : description
   const deadlineMatch = text.match(/(?:deadline|apply by|applications? close(?:s)?|closing date|submit by)\s*[:\-]?\s*((?:\d{1,2}[\s/-]+)?(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[\s,/-]+\d{1,2}(?:,?\s+\d{4})?|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i)
@@ -521,8 +446,8 @@ function imageIdentity(value) {
 function assignDistinctStoryImages(items) {
   return items.map((item) => ({
     ...item,
-    image: item.image || fallbackImageFor(item.category, `${item.title} ${item.summary || ''}`, item.id),
-    imageOrigin: item.imageOrigin || 'topic_fallback',
+    image: item.image || '',
+    imageOrigin: item.imageOrigin || 'publisher_placeholder',
   }))
 }
 
@@ -556,7 +481,14 @@ function imageFromArticleHtml(html, pageUrl) {
 
 async function enrichMissingImagesWithPublisherMetadata(items) {
   // Keep this bounded: feeds can contain hundreds of items, and some publishers block page requests.
-  const candidates = items.filter((item) => item.imageOrigin === 'topic_fallback' && isPublicHttpUrl(item.sourceUrl)).slice(0, 100)
+  const missing = items.filter((item) => item.imageOrigin === 'publisher_placeholder' && isPublicHttpUrl(item.sourceUrl))
+  const isRwandaPublisher = (item, name) => new RegExp(name, 'i').test(`${item.sourceName || ''} ${item.author || ''} ${item.tag || ''} ${item.sourceHome || ''} ${item.sourceUrl || ''}`)
+  // Prioritize the two required Rwanda publishers so image metadata lookup cannot be crowded out by unrelated feeds.
+  const priority = [
+    ...missing.filter((item) => isRwandaPublisher(item, 'kigali[ .-]?today|kigalitoday|kigali\.today')),
+    ...missing.filter((item) => isRwandaPublisher(item, 'igihe'))
+  ]
+  const candidates = [...new Map([...priority, ...missing].map((item) => [item.id, item])).values()].slice(0, 12)
   let cursor = 0
   const worker = async () => {
     while (cursor < candidates.length) {
@@ -564,8 +496,7 @@ async function enrichMissingImagesWithPublisherMetadata(items) {
       try {
         const response = await fetch(item.sourceUrl, {
           headers: { 'user-agent': 'Briefa/1.0 (+RSS reader; image metadata only)', accept: 'text/html,application/xhtml+xml' },
-          signal: AbortSignal.timeout(7000),
-          redirect: 'manual',
+          signal: AbortSignal.timeout(3500),
         })
         if (!response.ok || !/^text\/html|application\/xhtml\+xml/i.test(response.headers.get('content-type') || '')) continue
         const html = (await response.text()).slice(0, 1_000_000)
@@ -575,11 +506,11 @@ async function enrichMissingImagesWithPublisherMetadata(items) {
           item.imageOrigin = 'publisher_og'
         }
       } catch {
-        // Leave the topic-matched fallback in place when the publisher page is unavailable.
+        // Keep the source-branded placeholder when publisher metadata is unavailable.
       }
     }
   }
-  await Promise.all(Array.from({ length: Math.min(8, candidates.length) }, worker))
+  await Promise.all(Array.from({ length: Math.min(3, candidates.length) }, worker))
   return items
 }
 
@@ -616,7 +547,8 @@ async function refreshFeeds(force = false) {
         if (prior.length < 7) return false
         const priorSet = new Set(prior)
         const overlap = tokens.filter((token) => priorSet.has(token)).length
-        return overlap / Math.min(tokens.length, prior.length) >= 0.88
+        const union = new Set([...tokens, ...prior]).size
+        return overlap / Math.min(tokens.length, prior.length) >= 0.78 || (union > 0 && overlap / union >= 0.62)
       })
       if (duplicate) return false
       seenTitles.add(key)
@@ -624,9 +556,14 @@ async function refreshFeeds(force = false) {
       acceptedTitles.push(key)
       return true
     }).sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt))
-    cachedItems = assignDistinctStoryImages(await enrichMissingImagesWithPublisherMetadata(await enrichWithAI(items)))
+    const categoryLimits = { News: 120, Jobs: 70, Scholarships: 50, Opportunities: 50, Events: 50 }
+    const categoryCounts = new Map()
+    const boundedItems = items.filter((item) => { const count = categoryCounts.get(item.category) || 0; const limit = categoryLimits[item.category] || 60; if (count >= limit) return false; categoryCounts.set(item.category, count + 1); return true })
+    cachedItems = assignDistinctStoryImages(boundedItems)
+    const currentBatch = cachedItems
     sourceStatuses = results.map(({ feed, url, status, error }) => ({ name: feed, url, status, ...(error ? { error } : {}) }))
     refreshedAt = Date.now()
+    void (async () => { try { const enriched = await enrichWithAI(currentBatch); const withImages = await enrichMissingImagesWithPublisherMetadata(enriched); if (currentBatch === cachedItems) cachedItems = assignDistinctStoryImages(withImages) } catch (error) { console.error('Background story enrichment failed:', error.message) } })()
     return cachedItems
   })()
   try {
@@ -674,8 +611,9 @@ const server = createServer(async (request, response) => {
   }
 
   try {
-    await refreshFeeds(url.searchParams.get('refresh') === 'true')
-    if (url.pathname === '/api/stories') await refreshTrendingVideos()
+    const forceRefresh = url.searchParams.get('refresh') === 'true'
+    if (!refreshedAt || forceRefresh || Date.now() - refreshedAt >= refreshInterval) refreshFeeds(forceRefresh).catch((error) => console.error('Background feed refresh failed:', error.message))
+    if (url.pathname === '/api/stories' && Date.now() - trendingVideosUpdatedAt > refreshInterval) refreshTrendingVideos().catch((error) => console.error('Background video refresh failed:', error.message))
     response.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'access-control-allow-origin': '*' })
     response.end(JSON.stringify({
       items: cachedItems,

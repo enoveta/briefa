@@ -1,15 +1,18 @@
 const categorySources = {
   News: [
+    { name: 'Igihe', description: 'Rwanda news, public affairs, business, and community reporting.', url: 'https://igihe.com/' },
+    { name: 'Kigali Today', description: 'Rwanda and Kigali news and current affairs.', url: 'https://kigali.today/' },
     { name: 'UN News', description: 'United Nations reporting and updates.', url: 'https://news.un.org/' },
     { name: 'Reuters', description: 'Independent global and Africa reporting.', url: 'https://www.reuters.com/world/africa/' },
     { name: 'BBC News', description: 'Africa and international news coverage.', url: 'https://www.bbc.com/news' },
     { name: 'Al Jazeera', description: 'Africa and world news reporting.', url: 'https://www.aljazeera.com/' },
     { name: 'Rwanda Government', description: 'Official government information and announcements.', url: 'https://www.gov.rw/' },
-    { name: 'ReliefWeb', description: 'Humanitarian reporting and situation updates.', url: 'https://reliefweb.int/' },
     { name: 'World Health Organization', description: 'Public-health news and guidance.', url: 'https://www.who.int/news' },
     { name: 'World Bank News', description: 'Development, research, and policy news.', url: 'https://www.worldbank.org/en/news' },
   ],
   Jobs: [
+    { name: 'Igihe Jobs & Careers', description: 'Rwanda job and employment updates reported by Igihe.', url: 'https://igihe.com/' },
+    { name: 'Kigali Today Jobs', description: 'Rwanda vacancies and employment news coverage.', url: 'https://kigali.today/' },
     { name: 'UN Careers', description: 'Jobs and consultancies across the UN system.', url: 'https://careers.un.org/' },
     { name: 'UN jobs in Rwanda', description: 'United Nations roles based in Rwanda.', url: 'https://rwanda.un.org/en/jobs' },
     { name: 'World Bank Careers', description: 'Roles at the World Bank Group.', url: 'https://www.worldbank.org/ext/en/careers' },
@@ -30,7 +33,6 @@ const categorySources = {
     { name: 'EducationUSA', description: 'Official guidance for study in the United States.', url: 'https://educationusa.state.gov/' },
   ],
   Opportunities: [
-    { name: 'ReliefWeb', description: 'Humanitarian jobs, grants, and calls for proposals.', url: 'https://reliefweb.int/' },
     { name: 'Africa No Filter Opportunity Hub', description: 'Grants and opportunities for African storytellers.', url: 'https://opportunity.africanofilter.org/' },
     { name: 'YouthConnekt Rwanda', description: 'Opportunities for young people in Rwanda.', url: 'https://youthconnekt.rw/opportunities/' },
     { name: 'UNECA Opportunities', description: 'Economic development programmes and opportunities.', url: 'https://www.uneca.org/about/opportunities' },
